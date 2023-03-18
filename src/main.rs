@@ -1,3 +1,8 @@
+mod core;
+
 fn main() {
-    println!("Hello, world!");
+	
+	let x = core::resist_damage(4f64);
+    println!("Hello, world");
+	println!("{}", x);
 }
