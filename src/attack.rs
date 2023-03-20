@@ -72,8 +72,12 @@ fn apply_armor_reduction(attack: &BasicAttack, target: &mut Target) {
     let bonus_ratio = 1f64 - base_ratio;
     target.base_armor -= attack.flat_armor_reduction * base_ratio;
     target.bonus_armor -= attack.flat_armor_reduction * bonus_ratio;
-    target.base_armor *= 1f64 - attack.percent_armor_reduction / 100f64;
-    target.bonus_armor *= 1f64 - attack.percent_armor_reduction / 100f64;
+	if target.base_armor > 0.0 {
+		target.base_armor *= 1f64 - attack.percent_armor_reduction / 100f64;
+	}
+	if target.bonus_armor > 0.0 {
+		target.bonus_armor *= 1f64 - attack.percent_armor_reduction / 100f64;
+	}
 }
 
 fn get_effetive_armor(attack: &BasicAttack, original_target: &Target) -> f64 {
@@ -146,7 +150,24 @@ mod tests {
     // percent pen wiki example
     #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 30f64, ..Default::default() } , 42f64)]
     // percent bonus pen wiki example
-    #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 10f64, percent_bonus_armor_pen: 30f64, ..Default::default() } , 43.2f64)]
+    #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 10f64, percent_bonus_armor_pen: 30f64, ..Default::default() } , 43.2f64
+)]
+    // high level wiki example
+    #[case(100f64, 200f64, BasicAttack{
+		percent_bonus_armor_pen: 45.0,
+		flat_armor_pen: 10.0,
+		flat_armor_reduction: 30.0,
+		percent_armor_reduction: 30.0,
+		..Default::default()
+	} , 122.3)]
+    // high level wiki example
+    #[case(18.0, 0.0, BasicAttack{
+		percent_bonus_armor_pen: 45.0,
+		flat_armor_pen: 10.0,
+		flat_armor_reduction: 30.0,
+		percent_armor_reduction: 30.0,
+		..Default::default()
+	} , -12.0)]
     fn effective_armor(
         #[case] base_armor: f64,
         #[case] bonus_armor: f64,
