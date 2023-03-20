@@ -140,9 +140,13 @@ mod tests {
 
     #[rstest]
     // flat reduction wiki example
-	#[case(20f64, 40f64, BasicAttack{ flat_armor_reduction: 30f64, ..Default::default() } , 30f64)] 
+    #[case(20f64, 40f64, BasicAttack{ flat_armor_reduction: 30f64, ..Default::default() } , 30f64)]
     // percent reduction wiki example
     #[case(20f64, 40f64, BasicAttack{ percent_armor_reduction: 30f64, ..Default::default() } , 42f64)]
+    // percent pen wiki example
+    #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 30f64, ..Default::default() } , 42f64)]
+    // percent bonus pen wiki example
+    #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 10f64, percent_bonus_armor_pen: 30f64, ..Default::default() } , 43.2f64)]
     fn effective_armor(
         #[case] base_armor: f64,
         #[case] bonus_armor: f64,
