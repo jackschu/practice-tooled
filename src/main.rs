@@ -8,7 +8,7 @@ fn main() {
 
     let attack = attack::BasicAttack::new(1000f64);
     let target = attack::Target::new(attack::TargetData {
-        armor: 25f64,
+        base_armor: 25f64,
 		..attack::TargetData::default()
     });
 
