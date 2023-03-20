@@ -1,17 +1,17 @@
 use super::core;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct BasicAttack {
-    attack_damage: f64,
-    critical_strike_chance: f64,
-    bonus_critical_damage: f64,
+    pub attack_damage: f64,
+    pub critical_strike_chance: f64,
+    pub bonus_critical_damage: f64,
 
-    flat_armor_reduction: f64,
-    percent_armor_reduction: f64,
+    pub flat_armor_reduction: f64,
+    pub percent_armor_reduction: f64,
 
-    flat_armor_pen: f64, // effective lethality
-    percent_armor_pen: f64,
-    percent_bonus_armor_pen: f64,
+    pub flat_armor_pen: f64, // effective lethality
+    pub percent_armor_pen: f64,
+    pub percent_bonus_armor_pen: f64,
 }
 
 impl BasicAttack {
@@ -68,19 +68,25 @@ pub enum CritCalculation {
 }
 
 fn apply_armor_reduction(attack: &BasicAttack, target: &mut Target) {
-    let base_ratio = target.base_armor / (target.base_armor + target.bonus_armor);
+    let total_armor = target.base_armor + target.bonus_armor;
+    let base_ratio = if total_armor != 0.0 {
+        target.base_armor / total_armor
+    } else {
+        0.5
+    };
     let bonus_ratio = 1.0 - base_ratio;
     target.base_armor -= attack.flat_armor_reduction * base_ratio;
     target.bonus_armor -= attack.flat_armor_reduction * bonus_ratio;
-	if target.base_armor > 0.0 {
-		target.base_armor *= 1.0 - attack.percent_armor_reduction / 100.0;
-	}
-	if target.bonus_armor > 0.0 {
-		target.bonus_armor *= 1.0 - attack.percent_armor_reduction / 100.0;
-	}
+
+    if target.base_armor > 0.0 {
+        target.base_armor *= 1.0 - attack.percent_armor_reduction / 100.0;
+    }
+    if target.bonus_armor > 0.0 {
+        target.bonus_armor *= 1.0 - attack.percent_armor_reduction / 100.0;
+    }
 }
 
-fn get_effetive_armor(attack: &BasicAttack, original_target: &Target) -> f64 {
+pub fn get_effective_armor(attack: &BasicAttack, original_target: &Target) -> f64 {
     let mut target = original_target.clone();
     apply_armor_reduction(attack, &mut target);
     let mut effective_armor =
@@ -105,11 +111,11 @@ pub fn get_basic_attack_damage(
     crit_calc: CritCalculation,
 ) -> f64 {
     let damage = attack.attack_damage;
-    let effective_armor = get_effetive_armor(&attack, &target);
+    let effective_armor = get_effective_armor(&attack, &target);
 
     let adjusted_crit_multipier = match crit_calc {
-        CritCalculation::DidCrit => 1.0,
-        CritCalculation::NoCrit => 1.75 + attack.bonus_critical_damage,
+        CritCalculation::NoCrit => 1.0,
+        CritCalculation::DidCrit => 1.75 + attack.bonus_critical_damage,
         CritCalculation::AverageOutcome => {
             1.0 + (attack.critical_strike_chance * (0.75f64 + attack.bonus_critical_damage))
         }
@@ -177,12 +183,12 @@ mod tests {
         #[case] attack: BasicAttack,
         #[case] expected_armor: f64,
     ) {
-        let target = Target {
+        let target = Target::new(TargetData {
             base_armor,
             bonus_armor,
             ..Default::default()
-        };
+        });
 
-        assert_relative_eq!(expected_armor, get_effetive_armor(&attack, &target));
+        assert_relative_eq!(expected_armor, get_effective_armor(&attack, &target));
     }
 }

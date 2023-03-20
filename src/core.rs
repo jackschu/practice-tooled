@@ -14,8 +14,8 @@ pub fn lethality_to_pen(lethality: f64, level: u32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest;
     use approx::assert_relative_eq;
+    use rstest::rstest;
     #[rstest]
     #[case(1532.0, 0.0, 1532.0)] // zero resist is true
     #[case(1000.0, 25.0, 800.0)] // positive resist
