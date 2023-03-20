@@ -18,15 +18,15 @@ impl BasicAttack {
     pub fn new(attack_damage: f64) -> Self {
         Self {
             attack_damage,
-            critical_strike_chance: 0f64,
-            bonus_critical_damage: 0f64,
+            critical_strike_chance: 0.0,
+            bonus_critical_damage: 0.0,
 
-            flat_armor_reduction: 0f64,
-            percent_armor_reduction: 0f64,
+            flat_armor_reduction: 0.0,
+            percent_armor_reduction: 0.0,
 
-            flat_armor_pen: 0f64, // effective lethality
-            percent_armor_pen: 0f64,
-            percent_bonus_armor_pen: 0f64,
+            flat_armor_pen: 0.0, // effective lethality
+            percent_armor_pen: 0.0,
+            percent_bonus_armor_pen: 0.0,
         }
     }
 }
@@ -69,14 +69,14 @@ pub enum CritCalculation {
 
 fn apply_armor_reduction(attack: &BasicAttack, target: &mut Target) {
     let base_ratio = target.base_armor / (target.base_armor + target.bonus_armor);
-    let bonus_ratio = 1f64 - base_ratio;
+    let bonus_ratio = 1.0 - base_ratio;
     target.base_armor -= attack.flat_armor_reduction * base_ratio;
     target.bonus_armor -= attack.flat_armor_reduction * bonus_ratio;
 	if target.base_armor > 0.0 {
-		target.base_armor *= 1f64 - attack.percent_armor_reduction / 100f64;
+		target.base_armor *= 1.0 - attack.percent_armor_reduction / 100.0;
 	}
 	if target.bonus_armor > 0.0 {
-		target.bonus_armor *= 1f64 - attack.percent_armor_reduction / 100f64;
+		target.bonus_armor *= 1.0 - attack.percent_armor_reduction / 100.0;
 	}
 }
 
@@ -84,16 +84,16 @@ fn get_effetive_armor(attack: &BasicAttack, original_target: &Target) -> f64 {
     let mut target = original_target.clone();
     apply_armor_reduction(attack, &mut target);
     let mut effective_armor =
-        target.bonus_armor * (1f64 - attack.percent_bonus_armor_pen / 100f64) + target.base_armor;
-    effective_armor *= 1f64 - attack.percent_armor_pen / 100f64;
+        target.bonus_armor * (1.0 - attack.percent_bonus_armor_pen / 100.0) + target.base_armor;
+    effective_armor *= 1.0 - attack.percent_armor_pen / 100.0;
 
     // lethality can't reduce below 0
-    if effective_armor < 0f64 {
+    if effective_armor < 0.0 {
         return effective_armor;
     }
     let candidate = effective_armor - attack.flat_armor_pen;
-    if candidate < 0f64 {
-        return 0f64;
+    if candidate < 0.0 {
+        return 0.0;
     } else {
         return candidate;
     }
@@ -108,10 +108,10 @@ pub fn get_basic_attack_damage(
     let effective_armor = get_effetive_armor(&attack, &target);
 
     let adjusted_crit_multipier = match crit_calc {
-        CritCalculation::DidCrit => 1f64,
-        CritCalculation::NoCrit => 1.75f64 + attack.bonus_critical_damage,
+        CritCalculation::DidCrit => 1.0,
+        CritCalculation::NoCrit => 1.75 + attack.bonus_critical_damage,
         CritCalculation::AverageOutcome => {
-            1f64 + (attack.critical_strike_chance * (0.75f64 + attack.bonus_critical_damage))
+            1.0 + (attack.critical_strike_chance * (0.75f64 + attack.bonus_critical_damage))
         }
     };
     return core::resist_damage(damage, effective_armor) * adjusted_crit_multipier;
@@ -128,12 +128,12 @@ mod tests {
         #[test]
         fn typical_attack() {
             let attack = BasicAttack {
-                attack_damage: 74f64,
+                attack_damage: 74.0,
                 ..Default::default()
             };
 
             let target = Target {
-                base_armor: 20f64,
+                base_armor: 20.0,
                 ..Default::default()
             };
 
@@ -144,16 +144,19 @@ mod tests {
 
     #[rstest]
     // flat reduction wiki example
-    #[case(20f64, 40f64, BasicAttack{ flat_armor_reduction: 30f64, ..Default::default() } , 30f64)]
+    #[case(20.0, 40.0, BasicAttack{ flat_armor_reduction: 30.0, ..Default::default() } , 30.0)]
     // percent reduction wiki example
-    #[case(20f64, 40f64, BasicAttack{ percent_armor_reduction: 30f64, ..Default::default() } , 42f64)]
+    #[case(20.0, 40.0, BasicAttack{ percent_armor_reduction: 30.0, ..Default::default() } , 42.0)]
     // percent pen wiki example
-    #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 30f64, ..Default::default() } , 42f64)]
+    #[case(20.0, 40.0, BasicAttack{ percent_armor_pen: 30.0, ..Default::default() } , 42.0)]
     // percent bonus pen wiki example
-    #[case(20f64, 40f64, BasicAttack{ percent_armor_pen: 10f64, percent_bonus_armor_pen: 30f64, ..Default::default() } , 43.2f64
-)]
+    #[case(20.0, 40.0, BasicAttack{
+		percent_armor_pen: 10.0,
+		percent_bonus_armor_pen: 30.0,
+		..Default::default() } , 43.2
+	)]
     // high level wiki example
-    #[case(100f64, 200f64, BasicAttack{
+    #[case(100.0, 200.0, BasicAttack{
 		percent_bonus_armor_pen: 45.0,
 		flat_armor_pen: 10.0,
 		flat_armor_reduction: 30.0,
