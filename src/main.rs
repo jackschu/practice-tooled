@@ -9,7 +9,7 @@ fn main() {
     let attack = attack::BasicAttack::new(1000f64);
     let target = attack::Target::new(attack::TargetData {
         base_armor: 25f64,
-		..attack::TargetData::default()
+        ..attack::TargetData::default()
     });
 
     let damage = attack::get_basic_attack_damage(attack, target, attack::CritCalculation::AverageOutcome);

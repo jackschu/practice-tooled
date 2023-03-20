@@ -8,17 +8,17 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-	// values sampled from game
+    // values sampled from game
     #[case(0.0, 0.0, 2, 10.0, BasicAttack{
-		attack_damage: 115.0,
-		percent_armor_pen: 18.0,
-		..Default::default()
-	} , 115)]
+        attack_damage: 115.0,
+        percent_armor_pen: 18.0,
+        ..Default::default()
+    } , 115)]
     #[case(0.0, 20.0, 2, 10.0, BasicAttack{
-		attack_damage: 115.0,
-		percent_armor_pen: 18.0,
-		..Default::default()
-	} , 105)]
+        attack_damage: 115.0,
+        percent_armor_pen: 18.0,
+        ..Default::default()
+    } , 105)]
     fn test_resist_damage(
         #[case] base_armor: f64,
         #[case] bonus_armor: f64,
