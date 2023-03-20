@@ -139,7 +139,10 @@ mod tests {
     }
 
     #[rstest]
-    #[case(20f64, 40f64, BasicAttack{ flat_armor_reduction: 30f64, ..Default::default() } , 30f64)]
+    // flat reduction wiki example
+	#[case(20f64, 40f64, BasicAttack{ flat_armor_reduction: 30f64, ..Default::default() } , 30f64)] 
+    // percent reduction wiki example
+    #[case(20f64, 40f64, BasicAttack{ percent_armor_reduction: 30f64, ..Default::default() } , 42f64)]
     fn effective_armor(
         #[case] base_armor: f64,
         #[case] bonus_armor: f64,
@@ -149,11 +152,6 @@ mod tests {
         let target = Target {
             base_armor,
             bonus_armor,
-            ..Default::default()
-        };
-
-        let attack = BasicAttack {
-            flat_armor_reduction: 30f64,
             ..Default::default()
         };
 
