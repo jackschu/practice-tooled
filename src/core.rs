@@ -12,7 +12,14 @@ pub fn lethality_to_pen(lethality: f64, level: u32) -> f64 {
 }
 
 pub fn stat_at_level(base: f64, growth: f64, level: f64) -> f64 {
-	return base + growth*(level - 1.0)*(0.7025 + 0.0175*(level-1.0));
+    return base + growth * (level - 1.0) * (0.7025 + 0.0175 * (level - 1.0));
+}
+
+pub fn haste_to_cdr(mut haste: f64) -> f64 {
+    if haste > 500.0 {
+        haste = 500.0;
+    }
+    return haste / (haste + 100.0) * 100.0;
 }
 
 #[cfg(test)]
@@ -36,7 +43,18 @@ mod tests {
     #[rstest]
     #[case(670.0, 120.0, 2.0, 756.4)]
     #[case(0.0, 1.0, 18.0, 17.0)]
-    fn test_stat_at_level(#[case] base: f64, #[case] growth: f64, #[case] level: f64, #[case] expected: f64) {
+    fn test_stat_at_level(
+        #[case] base: f64,
+        #[case] growth: f64,
+        #[case] level: f64,
+        #[case] expected: f64,
+    ) {
         assert_relative_eq!(expected, stat_at_level(base, growth, level))
+    }
+    #[rstest]
+    #[case(100.0, 50.0)]
+    #[case(544.0, 250.0/3.0)] // test cdr past 500 cap
+    fn test_haste_to_cdr(#[case] haste: f64, #[case] expected: f64) {
+        assert_relative_eq!(expected, haste_to_cdr(haste))
     }
 }
