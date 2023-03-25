@@ -11,6 +11,10 @@ pub fn lethality_to_pen(lethality: f64, level: u32) -> f64 {
     return lethality * (0.6 + 0.4 * (level as f64) / 18.0);
 }
 
+pub fn stat_at_level(base: f64, growth: f64, level: f64) -> f64 {
+	return base + growth*(level - 1.0)*(0.7025 + 0.0175*(level-1.0));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -28,5 +32,11 @@ mod tests {
     #[case(100.0, 1, 560.0/9.0)]
     fn test_lethality_to_pen(#[case] lethality: f64, #[case] level: u32, #[case] expected: f64) {
         assert_relative_eq!(expected, lethality_to_pen(lethality, level))
+    }
+    #[rstest]
+    #[case(670.0, 120.0, 2.0, 756.4)]
+    #[case(0.0, 1.0, 18.0, 17.0)]
+    fn test_stat_at_level(#[case] base: f64, #[case] growth: f64, #[case] level: f64, #[case] expected: f64) {
+        assert_relative_eq!(expected, stat_at_level(base, growth, level))
     }
 }
