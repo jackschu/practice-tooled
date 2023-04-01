@@ -1,3 +1,5 @@
+use super::attack::BasicAttack;
+use super::core;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json;
@@ -68,15 +70,35 @@ pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
     return champion_stats;
 }
 
+pub fn get_champion_basic_attack(stats: &ChampionStats, level: u32) -> BasicAttack {
+    let attack_damage =
+        core::stat_at_level(stats.attack_damage, stats.attack_damage_per_level, level);
+    let critical_strike_chance =
+        core::stat_at_level(stats.critical_strike_chance, stats.crit_per_level, level);
+    let attack = BasicAttack {
+        attack_damage,
+        critical_strike_chance,
+        ..Default::default()
+    };
+
+    return attack;
+}
+
 #[cfg(test)]
 mod tests {
-    use super::load_champion_stats;
-
+    use super::*;
     use rstest::rstest;
 
     #[rstest]
     fn test_can_load_sivir() {
         let stats = load_champion_stats("Sivir");
         assert_eq!(stats.critical_strike_chance, 0.0);
+    }
+
+    #[rstest]
+    fn test_load_champion_basic_attack() {
+        let stats = load_champion_stats("Vi");
+        let attack = get_champion_basic_attack(&stats,  5);
+        assert_eq!(72.0, attack.attack_damage.round()); // values from game, patch 13.6
     }
 }
