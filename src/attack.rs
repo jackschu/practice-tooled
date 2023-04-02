@@ -123,9 +123,11 @@ pub fn get_basic_attack_damage(
     return core::resist_damage(damage, effective_armor) * adjusted_crit_multipier;
 }
 
-// pub fn get_dps(attack_speed: f64, attack: &BasicAttack, target: &Target){
-
-// }
+pub fn get_dps(attack_speed: f64, attack: &BasicAttack, target: &Target) -> f64 {
+    const CRIT_CALC: CritCalculation = CritCalculation::AverageOutcome;
+    let damage = get_basic_attack_damage(attack, target, CRIT_CALC);
+    return damage * attack_speed;
+}
 
 #[cfg(test)]
 mod tests {
