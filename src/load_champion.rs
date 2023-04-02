@@ -1,4 +1,5 @@
 use super::attack::BasicAttack;
+use super::attack::{Target, TargetData};
 use super::core;
 use serde::Deserialize;
 use serde::Serialize;
@@ -84,6 +85,24 @@ pub fn get_champion_basic_attack(stats: &ChampionStats, level: u32) -> BasicAtta
     return attack;
 }
 
+pub fn get_champion_target(stats: &ChampionStats, level: u32) -> Target {
+    let base_armor =
+        core::stat_at_level(stats.armor, stats.armor_per_level, level);
+    let magic_resist =
+        core::stat_at_level(stats.magic_resist, stats.magic_resist_per_level, level);
+    let max_health =
+        core::stat_at_level(stats.health, stats.health_per_level, level);
+    let target = Target::new(TargetData {
+        base_armor,
+        bonus_armor: 0.0,
+        max_health,
+        current_health: max_health,
+        magic_resist,
+    });
+
+    return target;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,7 +117,7 @@ mod tests {
     #[rstest]
     fn test_load_champion_basic_attack() {
         let stats = load_champion_stats("Vi");
-        let attack = get_champion_basic_attack(&stats,  5);
+        let attack = get_champion_basic_attack(&stats, 5);
         assert_eq!(72.0, attack.attack_damage.round()); // values from game, patch 13.6
     }
 }
