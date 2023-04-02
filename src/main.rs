@@ -12,13 +12,20 @@ fn main() {
         base_armor: 30f64,
         ..attack::TargetData::default()
     });
+
     let mut dps_vec = vec![];
-    for level in 1..18 {
+    let base_speed = sivir.attack_speed;
+    for level in 1..19 {
         let sivir_attack = load_champion::get_champion_basic_attack(&sivir, level);
-        let attack_speed =
-            core::stat_at_level(sivir.attack_speed, sivir.attack_speed_per_level, level);
-        //FIXME: meant to be ~30 at lvl 1, ~88 at level 18
-        let dps = attack::get_dps(attack_speed, &sivir_attack, &target);
+        let bonus_speed = core::stat_at_level(0.0, sivir.attack_speed_per_level, level);
+        let dps = attack::get_dps(
+            &attack::AttackSpeed {
+                base: base_speed,
+                bonus: bonus_speed,
+            },
+            &sivir_attack,
+            &target,
+        );
         dps_vec.push(dps);
     }
 

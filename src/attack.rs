@@ -14,6 +14,18 @@ pub struct BasicAttack {
     pub percent_bonus_armor_pen: f64,
 }
 
+#[derive(Default, Clone)]
+pub struct AttackSpeed {
+    pub base: f64,
+    pub bonus: f64,
+}
+
+impl AttackSpeed {
+    pub fn get_attacks_per_second(&self) -> f64 {
+        return self.base * (1.0 + self.bonus / 100.0);
+    }
+}
+
 impl BasicAttack {
     pub fn new(attack_damage: f64) -> Self {
         Self {
@@ -123,10 +135,10 @@ pub fn get_basic_attack_damage(
     return core::resist_damage(damage, effective_armor) * adjusted_crit_multipier;
 }
 
-pub fn get_dps(attack_speed: f64, attack: &BasicAttack, target: &Target) -> f64 {
+pub fn get_dps(attack_speed: &AttackSpeed, attack: &BasicAttack, target: &Target) -> f64 {
     const CRIT_CALC: CritCalculation = CritCalculation::AverageOutcome;
     let damage = get_basic_attack_damage(attack, target, CRIT_CALC);
-    return damage * attack_speed;
+    return damage * attack_speed.get_attacks_per_second();
 }
 
 #[cfg(test)]
@@ -196,5 +208,16 @@ mod tests {
         });
 
         assert_relative_eq!(expected_armor, get_effective_armor(&attack, &target));
+    }
+
+    #[rstest]
+    fn test_attack_to_attack_per_second() {
+        let speed = AttackSpeed {
+            base: 0.651,
+            bonus: 102.9228,
+        };
+        let per_second = speed.get_attacks_per_second();
+
+        assert_relative_eq!(1.321027428, per_second);
     }
 }

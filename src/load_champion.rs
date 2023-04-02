@@ -1,3 +1,5 @@
+use crate::attack::AttackSpeed;
+
 use super::attack::BasicAttack;
 use super::attack::{Target, TargetData};
 use super::core;
@@ -85,13 +87,18 @@ pub fn get_champion_basic_attack(stats: &ChampionStats, level: u32) -> BasicAtta
     return attack;
 }
 
+pub fn get_champion_attack_speed(stats: &ChampionStats, level: u32) -> AttackSpeed {
+    let bonus_speed = core::stat_at_level(0.0, stats.attack_speed_per_level, level);
+    return AttackSpeed {
+        base: stats.attack_speed,
+        bonus: bonus_speed,
+    };
+}
+
 pub fn get_champion_target(stats: &ChampionStats, level: u32) -> Target {
-    let base_armor =
-        core::stat_at_level(stats.armor, stats.armor_per_level, level);
-    let magic_resist =
-        core::stat_at_level(stats.magic_resist, stats.magic_resist_per_level, level);
-    let max_health =
-        core::stat_at_level(stats.health, stats.health_per_level, level);
+    let base_armor = core::stat_at_level(stats.armor, stats.armor_per_level, level);
+    let magic_resist = core::stat_at_level(stats.magic_resist, stats.magic_resist_per_level, level);
+    let max_health = core::stat_at_level(stats.health, stats.health_per_level, level);
     let target = Target::new(TargetData {
         base_armor,
         bonus_armor: 0.0,
