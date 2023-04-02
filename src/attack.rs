@@ -106,8 +106,8 @@ pub fn get_effective_armor(attack: &BasicAttack, original_target: &Target) -> f6
 }
 
 pub fn get_basic_attack_damage(
-    attack: BasicAttack,
-    target: Target,
+    attack: &BasicAttack,
+    target: &Target,
     crit_calc: CritCalculation,
 ) -> f64 {
     let damage = attack.attack_damage;
@@ -122,6 +122,10 @@ pub fn get_basic_attack_damage(
     };
     return core::resist_damage(damage, effective_armor) * adjusted_crit_multipier;
 }
+
+// pub fn get_dps(attack_speed: f64, attack: &BasicAttack, target: &Target){
+
+// }
 
 #[cfg(test)]
 mod tests {
@@ -143,7 +147,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let damage = get_basic_attack_damage(attack, target, CritCalculation::AverageOutcome);
+            let damage = get_basic_attack_damage(&attack, &target, CritCalculation::AverageOutcome);
             assert_eq!(62, damage.round() as u32)
         }
     }

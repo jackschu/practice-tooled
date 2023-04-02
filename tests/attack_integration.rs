@@ -37,7 +37,7 @@ mod tests {
 
         let mut attack = initial_attack.clone();
         attack.flat_armor_pen = lethality_to_pen(lethality, level);
-        let observed_damage = get_basic_attack_damage(attack, target, CritCalculation::NoCrit);
+        let observed_damage = get_basic_attack_damage(&attack, &target, CritCalculation::NoCrit);
         assert_eq!(expected_damage, observed_damage.round() as u32);
     }
 }

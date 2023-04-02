@@ -12,6 +12,6 @@ fn main() {
         ..attack::TargetData::default()
     });
 
-    let damage = attack::get_basic_attack_damage(attack, target, attack::CritCalculation::AverageOutcome);
+    let damage = attack::get_basic_attack_damage(&attack, &target, attack::CritCalculation::AverageOutcome);
 	println!("{}",damage)
 }
