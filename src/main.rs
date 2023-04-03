@@ -10,6 +10,8 @@ fn main() {
         ..attack::TargetData::default()
     });
 
+    let champion_names = load_champion_names();
+
     for name in champion_names {
         let champion = load_champion::load_champion_stats(&name);
         for level in 1..19 {
