@@ -14,7 +14,6 @@ fn main() {
     });
 
     let mut dps_vec = vec![];
-    let base_speed = sivir.attack_speed;
     for level in 1..19 {
         let sivir_attack = sivir.as_basic_attack(level);
         let dps = attack::get_dps(&sivir.as_attack_speed(level), &sivir_attack, &target);
