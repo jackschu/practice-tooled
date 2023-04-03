@@ -17,15 +17,7 @@ fn main() {
     let base_speed = sivir.attack_speed;
     for level in 1..19 {
         let sivir_attack = sivir.as_basic_attack(level);
-        let bonus_speed = core::stat_at_level(0.0, sivir.attack_speed_per_level, level);
-        let dps = attack::get_dps(
-            &attack::AttackSpeed {
-                base: base_speed,
-                bonus: bonus_speed,
-            },
-            &sivir_attack,
-            &target,
-        );
+        let dps = attack::get_dps(&sivir.as_attack_speed(level), &sivir_attack, &target);
         dps_vec.push(dps);
     }
 
