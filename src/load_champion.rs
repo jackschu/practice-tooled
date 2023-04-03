@@ -73,41 +73,44 @@ pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
     return champion_stats;
 }
 
-pub fn get_champion_basic_attack(stats: &ChampionStats, level: u32) -> BasicAttack {
-    let attack_damage =
-        core::stat_at_level(stats.attack_damage, stats.attack_damage_per_level, level);
-    let critical_strike_chance =
-        core::stat_at_level(stats.critical_strike_chance, stats.crit_per_level, level);
-    let attack = BasicAttack {
-        attack_damage,
-        critical_strike_chance,
-        ..Default::default()
-    };
+impl ChampionStats {
+    pub fn as_basic_attack(&self, level: u32) -> BasicAttack {
+        let attack_damage =
+            core::stat_at_level(self.attack_damage, self.attack_damage_per_level, level);
+        let critical_strike_chance =
+            core::stat_at_level(self.critical_strike_chance, self.crit_per_level, level);
+        let attack = BasicAttack {
+            attack_damage,
+            critical_strike_chance,
+            ..Default::default()
+        };
 
-    return attack;
-}
+        return attack;
+    }
 
-pub fn get_champion_attack_speed(stats: &ChampionStats, level: u32) -> AttackSpeed {
-    let bonus_speed = core::stat_at_level(0.0, stats.attack_speed_per_level, level);
-    return AttackSpeed {
-        base: stats.attack_speed,
-        bonus: bonus_speed,
-    };
-}
+    pub fn as_attack_speed(&self, level: u32) -> AttackSpeed {
+        let bonus_speed = core::stat_at_level(0.0, self.attack_speed_per_level, level);
+        return AttackSpeed {
+            base: self.attack_speed,
+            bonus: bonus_speed,
+        };
+    }
 
-pub fn get_champion_target(stats: &ChampionStats, level: u32) -> Target {
-    let base_armor = core::stat_at_level(stats.armor, stats.armor_per_level, level);
-    let magic_resist = core::stat_at_level(stats.magic_resist, stats.magic_resist_per_level, level);
-    let max_health = core::stat_at_level(stats.health, stats.health_per_level, level);
-    let target = Target::new(TargetData {
-        base_armor,
-        bonus_armor: 0.0,
-        max_health,
-        current_health: max_health,
-        magic_resist,
-    });
+    pub fn as_target(&self, level: u32) -> Target {
+        let base_armor = core::stat_at_level(self.armor, self.armor_per_level, level);
+        let magic_resist =
+            core::stat_at_level(self.magic_resist, self.magic_resist_per_level, level);
+        let max_health = core::stat_at_level(self.health, self.health_per_level, level);
+        let target = Target::new(TargetData {
+            base_armor,
+            bonus_armor: 0.0,
+            max_health,
+            current_health: max_health,
+            magic_resist,
+        });
 
-    return target;
+        return target;
+    }
 }
 
 #[cfg(test)]
@@ -124,7 +127,7 @@ mod tests {
     #[rstest]
     fn test_load_champion_basic_attack() {
         let stats = load_champion_stats("Vi");
-        let attack = get_champion_basic_attack(&stats, 5);
+        let attack = stats.as_basic_attack(5);
         assert_eq!(72.0, attack.attack_damage.round()); // values from game, patch 13.6
     }
 }
