@@ -1,4 +1,5 @@
 use crate::attack::AttackSpeed;
+use std::borrow::Cow;
 
 use super::attack::BasicAttack;
 use super::attack::{Target, TargetData};
@@ -10,6 +11,7 @@ use serde_json::Value;
 
 use std::fs::File;
 use std::io::prelude::*;
+use std::option::Option;
 
 #[derive(Deserialize, Serialize)]
 pub struct ChampionStats {
@@ -55,21 +57,37 @@ pub struct ChampionStats {
     pub attack_speed: f64,
 }
 
-pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
+pub fn open_champion_json() -> Option<Value> {
     let mut file = File::open("data/champion.json").expect("Could not open file");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect("Could not read file");
 
     let full_value: Value = serde_json::from_str(&contents).expect("could not unmarshal");
-    let data = full_value
-        .get("data")
-        .and_then(|value| value.get(champion_name))
+    return full_value.get("data").map(|v| v.to_owned());
+}
+
+pub fn load_champion_names() -> Vec<String> {
+    let data = open_champion_json().unwrap();
+    let mut names = Vec::new();
+    if let Value::Object(map) = data {
+        for (name, _) in map {
+            names.push(name);
+        }
+    }
+    return names;
+}
+
+pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
+    let data = open_champion_json().unwrap();
+    let champion_stats_json = data
+        .get(champion_name)
         .and_then(|value| value.get("stats"))
-        .expect("could not index to champ");
+        .unwrap();
+
     // why is this clone needed?
     let champion_stats: ChampionStats =
-        serde_json::from_value(data.clone()).expect("could not unmarshal to person");
+        serde_json::from_value(champion_stats_json.clone()).unwrap();
     return champion_stats;
 }
 
