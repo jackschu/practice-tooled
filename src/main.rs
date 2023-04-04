@@ -1,4 +1,4 @@
-use practice_tooled::load_champion::load_champion_names;
+use practice_tooled::{load_champion::load_champion_names, load_item::load_items};
 
 mod attack;
 mod core;
@@ -26,4 +26,5 @@ fn main() {
             )
         }
     }
+    load_items();
 }
