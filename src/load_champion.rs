@@ -1,5 +1,4 @@
 use crate::attack::AttackSpeed;
-use std::borrow::Cow;
 
 use super::attack::BasicAttack;
 use super::attack::{Target, TargetData};
