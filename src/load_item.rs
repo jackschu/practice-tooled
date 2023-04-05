@@ -14,7 +14,7 @@ pub fn open_item_json() -> Value {
     return full_value.get("data").map(|v| v.to_owned()).unwrap();
 }
 
-pub fn load_items() {
+pub fn load_items() -> serde_json::Map<std::string::String, Value> {
     let json_value = open_item_json();
     let mut filtered_items = json_value.as_object().unwrap().clone();
     filtered_items.retain(|_key, value| {
@@ -29,7 +29,24 @@ pub fn load_items() {
             .and_then(|v| v.get(SUMMONERS_RIFT_MAP_ID))
             .and_then(|v| v.as_bool())
             .unwrap();
-        return purchasable && !enabled;
+        return purchasable && enabled;
     });
-    println!("{:#?}", filtered_items)
+    return filtered_items;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    fn test_filtered() {
+        let items = load_items();
+        const EMBER_KNIFE: &str = "1035";
+        const GUARDIANS_HORN: &str = "2051";
+        const LONG_SWORD: &str = "1036";
+        assert!(!items.contains_key(EMBER_KNIFE));
+        assert!(!items.contains_key(GUARDIANS_HORN));
+        assert!(items.contains_key(LONG_SWORD));
+    }
 }
