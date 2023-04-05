@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read};
+use std::{collections::HashMap, fs::File, io::Read, iter::Map};
 
 use serde_json::Value;
 
@@ -12,6 +12,17 @@ pub fn open_item_json() -> Value {
 
     let full_value: Value = serde_json::from_str(&contents).expect("could not unmarshal");
     return full_value.get("data").map(|v| v.to_owned()).unwrap();
+}
+
+pub fn name_to_id_map() -> HashMap<String, String> {
+    let mut output_map = HashMap::new();
+    let all_items = load_items();
+    all_items.iter().for_each(|(key, value)| {
+        let name = value.get("name").and_then(|v| v.as_str()).unwrap();
+        output_map.entry(name.to_string()).or_insert(key.to_owned());
+        return;
+    });
+    return output_map;
 }
 
 pub fn load_items() -> serde_json::Map<std::string::String, Value> {
@@ -48,5 +59,11 @@ mod tests {
         assert!(!items.contains_key(EMBER_KNIFE));
         assert!(!items.contains_key(GUARDIANS_HORN));
         assert!(items.contains_key(LONG_SWORD));
+    }
+
+    #[rstest]
+    fn test_name_to_id_map() {
+        let id_map = name_to_id_map();
+        assert_eq!(id_map.get("Long Sword").unwrap(), "1036");
     }
 }
