@@ -1,8 +1,38 @@
 use std::{collections::HashMap, fs::File, io::Read, iter::Map};
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 const SUMMONERS_RIFT_MAP_ID: &str = "11";
+
+#[derive(Deserialize, Serialize)]
+pub struct ItemStatChanges {
+    #[serde(rename = "FlatArmorMod")]
+    pub armor: Option<f64>,
+    #[serde(rename = "FlatCritChanceMod")]
+    pub crit_chance: Option<f64>,
+    #[serde(rename = "FlatHPPoolMod")]
+    pub health: Option<f64>,
+    #[serde(rename = "FlatHPRegenMod")]
+    pub health_regen: Option<f64>,
+    #[serde(rename = "FlatMagicDamageMod")]
+    pub ability_power: Option<f64>,
+    #[serde(rename = "FlatMovementSpeedMod")]
+    pub flat_movement_speed: Option<f64>,
+    #[serde(rename = "FlatMPPoolMod")]
+    pub mana: Option<f64>,
+    #[serde(rename = "FlatPhysicalDamageMod")]
+    pub attack_damage: Option<f64>,
+    #[serde(rename = "FlatSpellBlockMod")]
+    pub magic_resist: Option<f64>,
+    #[serde(rename = "PercentAttackSpeedMod")]
+    pub bonus_attack_speed: Option<f64>,
+    #[serde(rename = "PercentLifeStealMod")]
+    pub life_steal: Option<f64>,
+    #[serde(rename = "PercentMovementSpeedMod")]
+    pub percent_movement_speed: Option<f64>,
+}
 
 pub fn open_item_json() -> Value {
     let mut file = File::open("data/item.json").expect("Could not open file");
