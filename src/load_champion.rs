@@ -8,6 +8,8 @@ use serde::Serialize;
 use serde_json;
 use serde_json::Value;
 
+use super::load_item;
+
 use std::fs::File;
 use std::io::prelude::*;
 use std::option::Option;
@@ -54,6 +56,27 @@ pub struct ChampionStats {
     pub attack_speed_per_level: f64,
     #[serde(rename = "attackspeed")]
     pub attack_speed: f64,
+    #[serde(skip)]
+    pub bonus_attack_speed: f64,
+    #[serde(skip)]
+    pub life_steal: f64,
+    #[serde(skip)]
+    pub percent_movement_speed: f64,
+}
+
+impl ChampionStats {
+    pub fn add_item_deltas(&mut self, item: &load_item::ItemStatDeltas) {
+        self.armor += item.armor.unwrap_or(0.0);
+        self.magic_resist += item.magic_resist.unwrap_or(0.0);
+        self.health_regen += item.health_regen.unwrap_or(0.0);
+        self.health += item.health.unwrap_or(0.0);
+        self.mana += item.mana.unwrap_or(0.0);
+        self.attack_damage += item.attack_damage.unwrap_or(0.0);
+        self.bonus_attack_speed += item.bonus_attack_speed.unwrap_or(0.0);
+        self.life_steal += item.life_steal.unwrap_or(0.0);
+        self.percent_movement_speed += item.percent_movement_speed.unwrap_or(0.0);
+        self.move_speed += item.flat_movement_speed.unwrap_or(0.0);
+    }
 }
 
 pub fn open_champion_json() -> Option<Value> {
@@ -106,7 +129,8 @@ impl ChampionStats {
     }
 
     pub fn as_attack_speed(&self, level: u32) -> AttackSpeed {
-        let bonus_speed = core::stat_at_level(0.0, self.attack_speed_per_level, level);
+        let bonus_speed =
+            core::stat_at_level(0.0, self.attack_speed_per_level, level) + self.bonus_attack_speed;
         return AttackSpeed {
             base: self.attack_speed,
             bonus: bonus_speed,

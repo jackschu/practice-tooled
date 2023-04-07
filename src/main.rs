@@ -6,6 +6,7 @@ use practice_tooled::{
 mod attack;
 mod core;
 mod load_champion;
+mod load_item;
 
 fn main() {
     let target = attack::Target::new(attack::TargetData {
