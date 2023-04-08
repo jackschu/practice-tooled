@@ -57,6 +57,18 @@ pub fn name_to_id_map() -> HashMap<String, String> {
     return output_map;
 }
 
+pub fn load_item(name: &str) -> ItemStatDeltas {
+    let map = name_to_id_map();
+    let id = map.get(name).unwrap();
+    let item_value = load_items()
+        .get(id)
+        .and_then(|v| v.get("stats"))
+        .unwrap()
+        .clone();
+    let item_obj: ItemStatDeltas = serde_json::from_value(item_value).unwrap();
+    return item_obj;
+}
+
 pub fn load_items() -> serde_json::Map<std::string::String, Value> {
     let json_value = open_item_json();
     let mut filtered_items = json_value.as_object().unwrap().clone();
@@ -97,5 +109,11 @@ mod tests {
     fn test_name_to_id_map() {
         let id_map = name_to_id_map();
         assert_eq!(id_map.get("Long Sword").unwrap(), "1036");
+    }
+
+    #[rstest]
+    fn test_load_item_stats() {
+        let long_sword_stats = load_item("Long Sword");
+        assert_eq!(long_sword_stats.attack_damage.unwrap(), 10.0);
     }
 }
