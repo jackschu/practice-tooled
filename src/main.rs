@@ -9,6 +9,11 @@ mod load_champion;
 mod load_item;
 
 fn main() {
+    load_items();
+}
+
+fn example_basic_attack_dps() {
+    // known issue: doesnt accomodate for non-one ad scaling (kalista) or on hit passives
     let target = attack::Target::new(attack::TargetData {
         base_armor: 30f64,
         ..attack::TargetData::default()
@@ -30,5 +35,4 @@ fn main() {
             )
         }
     }
-    load_items();
 }
