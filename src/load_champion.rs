@@ -3,6 +3,9 @@ use crate::attack::AttackSpeed;
 use super::attack::BasicAttack;
 use super::attack::{Target, TargetData};
 use super::core;
+
+use memoize::memoize;
+
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json;
@@ -79,6 +82,7 @@ impl ChampionStats {
     }
 }
 
+#[memoize]
 pub fn open_champion_json() -> Option<Value> {
     let mut file = File::open("data/champion.json").expect("Could not open file");
     let mut contents = String::new();

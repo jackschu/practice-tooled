@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fs::File, io::Read, iter::Map};
 
+use memoize::memoize;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
@@ -34,6 +35,7 @@ pub struct ItemStatDeltas {
     pub percent_movement_speed: Option<f64>,
 }
 
+#[memoize]
 pub fn open_item_json() -> Value {
     let mut file = File::open("data/item.json").expect("Could not open file");
     let mut contents = String::new();
