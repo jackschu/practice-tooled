@@ -1,10 +1,8 @@
-use crate::load_item::ItemStatDeltas;
-use practice_tooled::load_champion::load_champion_names;
-
-mod attack;
-mod core;
-mod load_champion;
-mod load_item;
+use practice_tooled::{
+    attack,
+    load_champion::{load_champion_names, load_champion_stats},
+    load_item::load_item,
+};
 
 fn main() {
     example_vi_staring_item();
@@ -12,15 +10,21 @@ fn main() {
 
 fn example_vi_staring_item() {
     let level = 2;
-    let target = load_champion::load_champion_stats("Leblanc").as_target(level);
-    let champion = load_champion::load_champion_stats("Vi");
+    let target = load_champion_stats("Leblanc").as_target(level);
+    let champion = load_champion_stats("Vi");
     const NO_ITEM: &str = "NO_ITEM";
-    let item_names = ["Cull", "Long Sword", "Doran's Blade", NO_ITEM];
+    let item_names = [
+        "Cull",
+        "Long Sword",
+        "Doran's Blade",
+        "Doran's Shield",
+        NO_ITEM,
+    ];
 
     for item_name in item_names {
         let mut copy = champion.clone();
         if item_name != NO_ITEM {
-            let item: ItemStatDeltas = load_item::load_item(item_name);
+            let item = load_item(item_name);
             //println!("{:#?}", item);
             copy.add_item_deltas(&item);
         }
@@ -46,7 +50,7 @@ fn example_basic_attack_dps() {
     let champion_names = load_champion_names();
 
     for name in champion_names {
-        let champion = load_champion::load_champion_stats(&name);
+        let champion = load_champion_stats(&name);
         for level in 1..19 {
             let basic_attack = champion.as_basic_attack(level);
             let speed = champion.as_attack_speed(level);
