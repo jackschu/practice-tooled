@@ -7,7 +7,7 @@ use serde_json::Value;
 
 const SUMMONERS_RIFT_MAP_ID: &str = "11";
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ItemStatDeltas {
     #[serde(rename = "FlatArmorMod")]
     pub armor: Option<f64>,

@@ -1,7 +1,5 @@
-use practice_tooled::{
-    load_champion::load_champion_names,
-    load_item::{load_items, name_to_id_map},
-};
+use crate::load_item::ItemStatDeltas;
+use practice_tooled::load_champion::load_champion_names;
 
 mod attack;
 mod core;
@@ -9,7 +7,33 @@ mod load_champion;
 mod load_item;
 
 fn main() {
-    load_items();
+    example_vi_staring_item();
+}
+
+fn example_vi_staring_item() {
+    let level = 2;
+    let target = load_champion::load_champion_stats("Leblanc").as_target(level);
+    let champion = load_champion::load_champion_stats("Vi");
+    const NO_ITEM: &str = "NO_ITEM";
+    let item_names = ["Cull", "Long Sword", "Doran's Blade", NO_ITEM];
+
+    for item_name in item_names {
+        let mut copy = champion.clone();
+        if item_name != NO_ITEM {
+            let item: ItemStatDeltas = load_item::load_item(item_name);
+            //println!("{:#?}", item);
+            copy.add_item_deltas(&item);
+        }
+        let dps = attack::get_dps(
+            &copy.as_attack_speed(level),
+            &copy.as_basic_attack(level),
+            &target,
+        );
+        println!(
+            "champion: {} \t\t level: {} \t item: {} \t dps: {:.2}",
+            "vi", level, item_name, dps
+        )
+    }
 }
 
 fn example_basic_attack_dps() {

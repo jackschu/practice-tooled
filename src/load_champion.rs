@@ -1,4 +1,5 @@
 use crate::attack::AttackSpeed;
+use crate::load_item::ItemStatDeltas;
 
 use super::attack::BasicAttack;
 use super::attack::{Target, TargetData};
@@ -11,13 +12,11 @@ use serde::Serialize;
 use serde_json;
 use serde_json::Value;
 
-use super::load_item;
-
 use std::fs::File;
 use std::io::prelude::*;
 use std::option::Option;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct ChampionStats {
     #[serde(rename = "hp")]
     pub health: f64,
@@ -68,7 +67,7 @@ pub struct ChampionStats {
 }
 
 impl ChampionStats {
-    pub fn add_item_deltas(&mut self, item: &load_item::ItemStatDeltas) {
+    pub fn add_item_deltas(&mut self, item: &ItemStatDeltas) {
         self.armor += item.armor.unwrap_or(0.0);
         self.magic_resist += item.magic_resist.unwrap_or(0.0);
         self.health_regen += item.health_regen.unwrap_or(0.0);
