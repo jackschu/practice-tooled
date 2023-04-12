@@ -7,11 +7,11 @@ pub fn resist_damage(raw_damage: f64, resist_amount: f64) -> f64 {
     return raw_damage * (2.0 - SCALING_RATIO / (SCALING_RATIO - resist_amount));
 }
 
-pub fn lethality_to_pen(lethality: f64, level: u32) -> f64 {
+pub fn lethality_to_pen(lethality: f64, level: u8) -> f64 {
     return lethality * (0.6 + 0.4 * (level as f64) / 18.0);
 }
 
-pub fn stat_at_level(base: f64, growth: f64, level: u32) -> f64 {
+pub fn stat_at_level(base: f64, growth: f64, level: u8) -> f64 {
     return base + growth * (level as f64 - 1.0) * (0.7025 + 0.0175 * (level as f64 - 1.0));
 }
 
@@ -37,7 +37,7 @@ mod tests {
     #[rstest]
     #[case(20.0, 18, 20.0)]
     #[case(100.0, 1, 560.0/9.0)]
-    fn test_lethality_to_pen(#[case] lethality: f64, #[case] level: u32, #[case] expected: f64) {
+    fn test_lethality_to_pen(#[case] lethality: f64, #[case] level: u8, #[case] expected: f64) {
         assert_relative_eq!(expected, lethality_to_pen(lethality, level))
     }
     #[rstest]
@@ -46,7 +46,7 @@ mod tests {
     fn test_stat_at_level(
         #[case] base: f64,
         #[case] growth: f64,
-        #[case] level: u32,
+        #[case] level: u8,
         #[case] expected: f64,
     ) {
         assert_relative_eq!(expected, stat_at_level(base, growth, level))

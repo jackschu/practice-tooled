@@ -23,7 +23,7 @@ mod tests {
         #[case] base_armor: f64,
         #[case] bonus_armor: f64,
 
-        #[case] level: u32,
+        #[case] level: u8,
         #[case] lethality: f64,
 
         #[case] initial_attack: BasicAttack,
