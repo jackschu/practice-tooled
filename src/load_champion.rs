@@ -126,7 +126,7 @@ impl ChampionStats {
         let critical_strike_chance =
             core::stat_at_level(self.critical_strike_chance, self.crit_per_level, level);
         let attack = BasicAttack {
-            attack_damage,
+            base_attack_damage: attack_damage,
             critical_strike_chance,
             ..Default::default()
         };
@@ -175,6 +175,6 @@ mod tests {
     fn test_load_champion_basic_attack() {
         let stats = load_champion_stats("Vi");
         let attack = stats.as_basic_attack(5);
-        assert_eq!(72.0, attack.attack_damage.round()); // values from game, patch 13.6
+        assert_eq!(72.0, attack.base_attack_damage.round()); // values from game, patch 13.6
     }
 }

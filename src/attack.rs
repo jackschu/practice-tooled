@@ -2,7 +2,8 @@ use super::core;
 
 #[derive(Default, Clone)]
 pub struct BasicAttack {
-    pub attack_damage: f64,
+    pub base_attack_damage: f64,
+    pub bonus_attack_damage: f64,
     pub critical_strike_chance: f64,
     pub bonus_critical_damage: f64,
 
@@ -27,9 +28,14 @@ impl AttackSpeed {
 }
 
 impl BasicAttack {
-    pub fn new(attack_damage: f64) -> Self {
+    pub fn get_total_attack_damage(&self) -> f64 {
+        return self.base_attack_damage + self.bonus_attack_damage;
+    }
+
+    pub fn new(base_attack_damage: f64, bonus_attack_damage: f64) -> Self {
         Self {
-            attack_damage,
+            base_attack_damage,
+            bonus_attack_damage,
             critical_strike_chance: 0.0,
             bonus_critical_damage: 0.0,
 
@@ -122,7 +128,7 @@ pub fn get_basic_attack_damage(
     target: &Target,
     crit_calc: CritCalculation,
 ) -> f64 {
-    let damage = attack.attack_damage;
+    let damage = attack.get_total_attack_damage();
     let effective_armor = get_effective_armor(&attack, &target);
 
     let adjusted_crit_multipier = match crit_calc {
@@ -152,7 +158,8 @@ mod tests {
         #[test]
         fn typical_attack() {
             let attack = BasicAttack {
-                attack_damage: 74.0,
+                base_attack_damage: 24.0,
+                bonus_attack_damage: 50.0,
                 ..Default::default()
             };
 

@@ -19,8 +19,12 @@ impl SingleDamage {
         rank: u8,
         unqualified_attack: &attack::BasicAttack,
     ) -> attack::BasicAttack {
+        // FIXME this probably wants to return something like a damage count with penetration numbers
+        // rather than stuffing this into BasicAttack
         let mut out = unqualified_attack.clone();
-        out.attack_damage = self.damages[rank as usize] + self.ad_ratio * out.attack_damage;
+        out.base_attack_damage =
+            self.damages[rank as usize] + self.ad_ratio * out.get_total_attack_damage();
+        out.bonus_attack_damage = 0.0;
         return out;
     }
 }
@@ -47,7 +51,7 @@ impl Vi {
         let champion = load_champion_stats("Vi").as_basic_attack(self.level);
 
         let mut out = self.q_data.to_basic_attack(1, &champion);
-        out.attack_damage *= percent_damage;
+        out.base_attack_damage *= percent_damage;
         return out;
     }
 }

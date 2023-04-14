@@ -10,12 +10,12 @@ mod tests {
     #[rstest]
     // values sampled from game
     #[case(0.0, 0.0, 2, 10.0, BasicAttack{
-        attack_damage: 115.0,
+        base_attack_damage: 115.0,
         percent_armor_pen: 18.0,
         ..Default::default()
     } , 115)]
     #[case(0.0, 20.0, 2, 10.0, BasicAttack{
-        attack_damage: 115.0,
+        base_attack_damage: 115.0,
         percent_armor_pen: 18.0,
         ..Default::default()
     } , 105)]
