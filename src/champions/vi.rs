@@ -10,6 +10,7 @@ pub struct Vi {
 pub struct SingleDamage {
     pub damages: [f64; 5],
     pub ad_ratio: f64,
+    pub bonus_ad_ratio: f64,
 }
 
 impl SingleDamage {
@@ -23,6 +24,7 @@ impl SingleDamage {
         return out;
     }
 }
+
 impl Vi {
     // as of 13.7
     const Q_CD: [f64; 5] = [12.0, 10.5, 9.0, 7.5, 6.0];
@@ -34,6 +36,7 @@ impl Vi {
             q_data: SingleDamage {
                 damages: Vi::Q_DAMAGE,
                 ad_ratio: 80.0,
+                bonus_ad_ratio: 80.0,
             },
         }
     }

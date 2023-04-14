@@ -50,8 +50,10 @@ pub struct ChampionStats {
     pub critical_strike_chance: f64,
     #[serde(rename = "critperlevel")]
     pub crit_per_level: f64,
+    #[serde(default)]
+    pub bonus_attack_damage: f64,
     #[serde(rename = "attackdamage")]
-    pub attack_damage: f64,
+    pub base_attack_damage: f64,
     #[serde(rename = "attackdamageperlevel")]
     pub attack_damage_per_level: f64,
     #[serde(rename = "attackspeedperlevel")]
@@ -73,7 +75,7 @@ impl ChampionStats {
         self.health_regen += item.health_regen.unwrap_or(0.0);
         self.health += item.health.unwrap_or(0.0);
         self.mana += item.mana.unwrap_or(0.0);
-        self.attack_damage += item.attack_damage.unwrap_or(0.0);
+        self.bonus_attack_damage += item.attack_damage.unwrap_or(0.0);
         self.bonus_attack_speed += item.bonus_attack_speed.unwrap_or(0.0);
         self.life_steal += item.life_steal.unwrap_or(0.0);
         self.percent_movement_speed += item.percent_movement_speed.unwrap_or(0.0);
@@ -119,7 +121,8 @@ pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
 impl ChampionStats {
     pub fn as_basic_attack(&self, level: u8) -> BasicAttack {
         let attack_damage =
-            core::stat_at_level(self.attack_damage, self.attack_damage_per_level, level);
+            core::stat_at_level(self.base_attack_damage, self.attack_damage_per_level, level)
+                + self.bonus_attack_damage;
         let critical_strike_chance =
             core::stat_at_level(self.critical_strike_chance, self.crit_per_level, level);
         let attack = BasicAttack {
