@@ -11,14 +11,18 @@ mod tests {
     // values sampled from game
     #[case(0.0, 0.0, 2, 10.0, BasicAttack{
         base_attack_damage: 115.0,
+        ..Default::default()
+    }, ArmorReducer{
         percent_armor_pen: 18.0,
         ..Default::default()
     } , 115)]
     #[case(0.0, 20.0, 2, 10.0, BasicAttack{
         base_attack_damage: 115.0,
+        ..Default::default()
+    } , ArmorReducer{
         percent_armor_pen: 18.0,
         ..Default::default()
-    } , 105)]
+    }, 105)]
     fn test_resist_damage(
         #[case] base_armor: f64,
         #[case] bonus_armor: f64,
@@ -27,6 +31,9 @@ mod tests {
         #[case] lethality: f64,
 
         #[case] initial_attack: BasicAttack,
+
+        #[case] mut reducer: ArmorReducer,
+
         #[case] expected_damage: u32,
     ) {
         let target = Target::new(TargetData {
@@ -35,9 +42,10 @@ mod tests {
             ..Default::default()
         });
 
-        let mut attack = initial_attack.clone();
-        attack.flat_armor_pen = lethality_to_pen(lethality, level);
-        let observed_damage = get_basic_attack_damage(&attack, &target, CritCalculation::NoCrit);
+        let attack = initial_attack.clone();
+        reducer.flat_armor_pen = lethality_to_pen(lethality, level);
+        let observed_damage =
+            get_basic_attack_damage(&attack, &target, CritCalculation::NoCrit, Some(&reducer));
         assert_eq!(expected_damage, observed_damage.round() as u32);
     }
 }
