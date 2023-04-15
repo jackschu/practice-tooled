@@ -2,16 +2,16 @@ use crate::load_champion::load_champion_stats;
 
 pub struct Vi {
     pub level: u8,
-    pub q_data: SingleDamage,
+    pub q_data: AbiltyDamageInfo,
 }
 
-pub struct SingleDamage {
+pub struct AbiltyDamageInfo {
     pub base_damages: [f64; 5],
     pub ad_ratio: f64,
     pub bonus_ad_ratio: f64,
 }
 
-impl SingleDamage {
+impl AbiltyDamageInfo {
     pub fn to_damage_amount(&self, rank: u8, base: f64, bonus: f64) -> f64 {
         return self.base_damages[rank as usize]
             + self.ad_ratio * (base + bonus)
@@ -27,7 +27,7 @@ impl Vi {
     pub fn new(level: u8) -> Vi {
         Vi {
             level,
-            q_data: SingleDamage {
+            q_data: AbiltyDamageInfo {
                 base_damages: Vi::Q_DAMAGE,
                 ad_ratio: 80.0,
                 bonus_ad_ratio: 80.0,
