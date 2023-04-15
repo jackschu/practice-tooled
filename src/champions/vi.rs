@@ -1,8 +1,12 @@
-use crate::load_champion::load_champion_stats;
+use crate::{
+    attack::{BasicAttack, Target, TargetData},
+    load_champion::load_champion_stats,
+};
 
 pub struct Vi {
     pub level: u8,
     pub q_data: AbiltyDamageInfo,
+    pub e_data: AbiltyDamageInfo,
 }
 
 pub struct AbiltyDamageInfo {
@@ -25,8 +29,9 @@ impl Vi {
     // as of 13.7
     const Q_CD: [f64; 5] = [12.0, 10.5, 9.0, 7.5, 6.0];
     const Q_DAMAGE: [f64; 5] = [45.0, 70.0, 95.0, 120.0, 145.0];
-
     const Q_MAX_DAMAGE_CHARGE: f64 = 1.25;
+
+    const E_DAMAGE: [f64; 5] = [0.0, 15.0, 30.0, 45.0, 60.0];
 
     // TODO, probably have ability ranks povided at construction time
     pub fn new(level: u8) -> Vi {
@@ -36,6 +41,11 @@ impl Vi {
                 base_damages: Vi::Q_DAMAGE,
                 ad_ratio: 0.0,
                 bonus_ad_ratio: 80.0,
+            },
+            e_data: AbiltyDamageInfo {
+                base_damages: Vi::E_DAMAGE,
+                ad_ratio: 120.0,
+                bonus_ad_ratio: 0.0,
             },
         }
     }
@@ -52,8 +62,15 @@ impl Vi {
         let base_ad = self.get_base_ad();
 
         let mut out = self.q_data.to_damage_amount(rank, base_ad, bonus_ad);
-        println!("out {} {}", out, percent_damage);
         out *= percent_damage;
+        return out;
+    }
+
+    pub fn ability_e(&self, rank: u8, bonus_ad: f64) -> f64 {
+        let base_ad = self.get_base_ad();
+        let mut out = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
+        let attack = BasicAttack::new(base_ad, bonus_ad);
+        out += attack.get_damage_to_target(&Target::new(TargetData::default()), None, None);
         return out;
     }
 }

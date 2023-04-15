@@ -33,6 +33,7 @@ fn example_vi_staring_item() {
             &copy.as_basic_attack(level),
             &target,
             None,
+            None,
         );
         println!(
             "champion: {} \t\t level: {} \t item: {} \t dps: {:.2}",
@@ -55,7 +56,7 @@ fn example_basic_attack_dps() {
         for level in 1..19 {
             let basic_attack = champion.as_basic_attack(level);
             let speed = champion.as_attack_speed(level);
-            let dps = attack::get_dps(&speed, &basic_attack, &target, None);
+            let dps = attack::get_dps(&speed, &basic_attack, &target, None, None);
             println!(
                 "champion: {} \t\t level: {} \t dps: {}",
                 name,

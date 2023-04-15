@@ -123,11 +123,8 @@ impl ChampionStats {
         let attack_damage =
             core::stat_at_level(self.base_attack_damage, self.attack_damage_per_level, level)
                 + self.bonus_attack_damage;
-        let critical_strike_chance =
-            core::stat_at_level(self.critical_strike_chance, self.crit_per_level, level);
         let attack = BasicAttack {
             base_attack_damage: attack_damage,
-            critical_strike_chance,
             ..Default::default()
         };
 
