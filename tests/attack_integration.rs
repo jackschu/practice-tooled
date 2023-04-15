@@ -4,7 +4,6 @@ use practice_tooled::attack;
 mod tests {
     use super::*;
     use attack::*;
-    use practice_tooled::core::*;
     use rstest::rstest;
 
     #[rstest]
@@ -43,7 +42,7 @@ mod tests {
         });
 
         let attack = initial_attack.clone();
-        reducer.flat_armor_pen = lethality_to_pen(lethality, level);
+        reducer.set_from_lethality(lethality, level);
         let observed_damage =
             get_basic_attack_damage(&attack, &target, CritCalculation::NoCrit, Some(&reducer));
         assert_eq!(expected_damage, observed_damage.round() as u32);

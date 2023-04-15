@@ -1,3 +1,5 @@
+use crate::core::lethality_to_pen;
+
 use super::core;
 
 #[derive(Default, Clone)]
@@ -47,6 +49,10 @@ impl ArmorReducer {
         } else {
             return candidate;
         }
+    }
+
+    pub fn set_from_lethality(&mut self, lethality: f64, level: u8) {
+        self.flat_armor_pen = lethality_to_pen(lethality, level);
     }
 }
 
