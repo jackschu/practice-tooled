@@ -1,31 +1,21 @@
 use crate::load_champion::load_champion_stats;
 
-use super::super::attack;
-
 pub struct Vi {
     pub level: u8,
     pub q_data: SingleDamage,
 }
 
 pub struct SingleDamage {
-    pub damages: [f64; 5],
+    pub base_damages: [f64; 5],
     pub ad_ratio: f64,
     pub bonus_ad_ratio: f64,
 }
 
 impl SingleDamage {
-    pub fn to_basic_attack(
-        &self,
-        rank: u8,
-        unqualified_attack: &attack::BasicAttack,
-    ) -> attack::BasicAttack {
-        // FIXME this probably wants to return something like a damage count with penetration numbers
-        // rather than stuffing this into BasicAttack
-        let mut out = unqualified_attack.clone();
-        out.base_attack_damage =
-            self.damages[rank as usize] + self.ad_ratio * out.get_total_attack_damage();
-        out.bonus_attack_damage = 0.0;
-        return out;
+    pub fn to_damage_amount(&self, rank: u8, base: f64, bonus: f64) -> f64 {
+        return self.base_damages[rank as usize]
+            + self.ad_ratio * (base + bonus)
+            + self.bonus_ad_ratio * bonus;
     }
 }
 
@@ -38,20 +28,22 @@ impl Vi {
         Vi {
             level,
             q_data: SingleDamage {
-                damages: Vi::Q_DAMAGE,
+                base_damages: Vi::Q_DAMAGE,
                 ad_ratio: 80.0,
                 bonus_ad_ratio: 80.0,
             },
         }
     }
 
-    pub fn ability_q(&self, charge_seconds: f64) -> attack::BasicAttack {
+    pub fn ability_q(&self, charge_seconds: f64) -> f64 {
         const MAX_SCALE: f64 = 0.5;
         let percent_damage = MAX_SCALE.min(charge_seconds * 0.05 / 0.125) + 0.5;
         let champion = load_champion_stats("Vi").as_basic_attack(self.level);
 
-        let mut out = self.q_data.to_basic_attack(1, &champion);
-        out.base_attack_damage *= percent_damage;
+        let mut out = self
+            .q_data
+            .to_damage_amount(1, champion.base_attack_damage, 0.0);
+        out *= percent_damage;
         return out;
     }
 }
