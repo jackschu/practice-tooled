@@ -20,6 +20,8 @@ impl AbiltyDamageInfo {
 }
 
 impl Vi {
+    const NAME: &str = "Vi";
+
     // as of 13.7
     const Q_CD: [f64; 5] = [12.0, 10.5, 9.0, 7.5, 6.0];
     const Q_DAMAGE: [f64; 5] = [45.0, 70.0, 95.0, 120.0, 145.0];
@@ -35,14 +37,18 @@ impl Vi {
         }
     }
 
-    pub fn ability_q(&self, charge_seconds: f64) -> f64 {
+    pub fn get_base_ad(&self) -> f64 {
+        return load_champion_stats(Vi::NAME)
+            .as_basic_attack(self.level)
+            .base_attack_damage;
+    }
+
+    pub fn ability_q(&self, rank: u8, bonus_ad: f64, charge_seconds: f64) -> f64 {
         const MAX_SCALE: f64 = 0.5;
         let percent_damage = MAX_SCALE.min(charge_seconds * 0.05 / 0.125) + 0.5;
-        let champion = load_champion_stats("Vi").as_basic_attack(self.level);
+        let base_ad = self.get_base_ad();
 
-        let mut out = self
-            .q_data
-            .to_damage_amount(1, champion.base_attack_damage, 0.0);
+        let mut out = self.q_data.to_damage_amount(rank, base_ad, bonus_ad);
         out *= percent_damage;
         return out;
     }
