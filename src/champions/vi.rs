@@ -1,5 +1,5 @@
 use crate::{
-    attack::{BasicAttack, Target, TargetData},
+    attack::{BasicAttack, CritAdjuster, CritCalculation, Target, TargetData},
     load_champion::load_champion_stats,
 };
 
@@ -66,11 +66,16 @@ impl Vi {
         return out;
     }
 
-    pub fn ability_e(&self, rank: u8, bonus_ad: f64) -> f64 {
+    pub fn ability_e(
+        &self,
+        rank: u8,
+        bonus_ad: f64,
+        crit_info: Option<(&CritAdjuster, CritCalculation)>,
+    ) -> f64 {
         let base_ad = self.get_base_ad();
         let mut out = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
         let attack = BasicAttack::new(base_ad, bonus_ad);
-        out += attack.get_damage_to_target(&Target::new(TargetData::default()), None, None);
+        out += attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
         return out;
     }
 }
