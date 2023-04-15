@@ -44,7 +44,7 @@ mod tests {
         let attack = initial_attack.clone();
         reducer.set_from_lethality(lethality, level);
         let observed_damage =
-            get_basic_attack_damage(&attack, &target, CritCalculation::NoCrit, Some(&reducer));
+            attack.get_damage_to_target(&target, CritCalculation::NoCrit, Some(&reducer));
         assert_eq!(expected_damage, observed_damage.round() as u32);
     }
 }

@@ -80,6 +80,28 @@ impl BasicAttack {
     pub fn get_total_attack_damage(&self) -> f64 {
         return self.base_attack_damage + self.bonus_attack_damage;
     }
+    pub fn get_damage_to_target(
+        &self,
+        target: &Target,
+        crit_calc: CritCalculation,
+        armor_reducer: Option<&ArmorReducer>,
+    ) -> f64 {
+        let damage = self.get_total_attack_damage();
+
+        let effective_armor = match armor_reducer {
+            Some(reducer) => reducer.get_effective_armor(&target),
+            None => target.base_armor + target.bonus_armor,
+        };
+
+        let adjusted_crit_multipier = match crit_calc {
+            CritCalculation::NoCrit => 1.0,
+            CritCalculation::DidCrit => 1.75 + self.bonus_critical_damage,
+            CritCalculation::AverageOutcome => {
+                1.0 + (self.critical_strike_chance * (0.75f64 + self.bonus_critical_damage))
+            }
+        };
+        return core::resist_damage(damage, effective_armor) * adjusted_crit_multipier;
+    }
 
     pub fn new(base_attack_damage: f64, bonus_attack_damage: f64) -> Self {
         Self {
@@ -127,29 +149,6 @@ pub enum CritCalculation {
     AverageOutcome,
 }
 
-pub fn get_basic_attack_damage(
-    attack: &BasicAttack,
-    target: &Target,
-    crit_calc: CritCalculation,
-    armor_reducer: Option<&ArmorReducer>,
-) -> f64 {
-    let damage = attack.get_total_attack_damage();
-
-    let effective_armor = match armor_reducer {
-        Some(reducer) => reducer.get_effective_armor(&target),
-        None => target.base_armor + target.bonus_armor,
-    };
-
-    let adjusted_crit_multipier = match crit_calc {
-        CritCalculation::NoCrit => 1.0,
-        CritCalculation::DidCrit => 1.75 + attack.bonus_critical_damage,
-        CritCalculation::AverageOutcome => {
-            1.0 + (attack.critical_strike_chance * (0.75f64 + attack.bonus_critical_damage))
-        }
-    };
-    return core::resist_damage(damage, effective_armor) * adjusted_crit_multipier;
-}
-
 pub fn get_dps(
     attack_speed: &AttackSpeed,
     attack: &BasicAttack,
@@ -157,7 +156,7 @@ pub fn get_dps(
     armor_reducer: Option<&ArmorReducer>,
 ) -> f64 {
     const CRIT_CALC: CritCalculation = CritCalculation::AverageOutcome;
-    let damage = get_basic_attack_damage(attack, target, CRIT_CALC, armor_reducer);
+    let damage = attack.get_damage_to_target(target, CRIT_CALC, armor_reducer);
     return damage * attack_speed.get_attacks_per_second();
 }
 
@@ -183,7 +182,7 @@ mod tests {
             };
 
             let damage =
-                get_basic_attack_damage(&attack, &target, CritCalculation::AverageOutcome, None);
+                attack.get_damage_to_target(&target, CritCalculation::AverageOutcome, None);
             assert_eq!(62, damage.round() as u32)
         }
     }
