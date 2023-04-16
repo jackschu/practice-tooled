@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Read, iter::Map};
+use std::{collections::HashMap, fs::File, io::Read};
 
 use memoize::memoize;
 use serde::Deserialize;

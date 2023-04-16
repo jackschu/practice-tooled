@@ -9,6 +9,8 @@ use practice_tooled::{
 fn main() {
     example_vi_ult_combo();
 }
+
+#[allow(dead_code)]
 fn example_vi_ult_combo() {
     let level = 6;
     let target = load_champion_stats("Leblanc").as_target(level);
@@ -47,6 +49,7 @@ fn example_vi_ult_combo() {
     );
 }
 
+#[allow(dead_code)]
 fn example_vi_staring_item() {
     let level = 2;
     let target = load_champion_stats("Leblanc").as_target(level);
@@ -82,6 +85,7 @@ fn example_vi_staring_item() {
     }
 }
 
+#[allow(dead_code)]
 fn example_basic_attack_dps() {
     // known issue: doesnt accomodate for non-one ad scaling (kalista) or on hit passives
     let target = attack::Target {

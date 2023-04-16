@@ -31,6 +31,7 @@ impl Vi {
     const NAME: &str = "Vi";
 
     // as of 13.7
+    #[allow(dead_code)]
     const Q_CD: [f64; 5] = [12.0, 10.5, 9.0, 7.5, 6.0];
     const Q_DAMAGE: [f64; 5] = [45.0, 70.0, 95.0, 120.0, 145.0];
     const Q_MAX_DAMAGE_CHARGE: f64 = 1.25;
