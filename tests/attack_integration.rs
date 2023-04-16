@@ -43,7 +43,7 @@ mod tests {
 
         let attack = initial_attack.clone();
         reducer.set_from_lethality(lethality, level);
-        let observed_damage = attack.get_damage_to_target(&target, None, Some(&reducer));
+        let observed_damage = attack.get_damage_to_target(&target, &None, Some(&reducer));
         assert_eq!(expected_damage, observed_damage.round() as u32);
     }
 }

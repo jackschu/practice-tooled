@@ -6,11 +6,15 @@ use crate::{
 pub struct Vi {
     pub level: u8,
     pub q_data: AbiltyDamageInfo,
+    pub w_data: AbiltyDamageInfo,
     pub e_data: AbiltyDamageInfo,
+    pub r_data: AbiltyDamageInfo,
 }
 
+#[derive(Default)]
 pub struct AbiltyDamageInfo {
     pub base_damages: [f64; 5],
+    pub target_max_health_ratio: [f64; 5], // stored as percent (0-100)
     pub ad_ratio: f64,
     pub bonus_ad_ratio: f64,
 }
@@ -31,7 +35,10 @@ impl Vi {
     const Q_DAMAGE: [f64; 5] = [45.0, 70.0, 95.0, 120.0, 145.0];
     const Q_MAX_DAMAGE_CHARGE: f64 = 1.25;
 
+    const W_HP_SCALING: [f64; 5] = [4.0, 5.5, 7.0, 8.5, 10.0];
+
     const E_DAMAGE: [f64; 5] = [0.0, 15.0, 30.0, 45.0, 60.0];
+    const R_DAMAGE: [f64; 5] = [150.0, 325.0, 350.0, 0.0, 0.0];
 
     // TODO, probably have ability ranks povided at construction time
     pub fn new(level: u8) -> Vi {
@@ -39,13 +46,23 @@ impl Vi {
             level,
             q_data: AbiltyDamageInfo {
                 base_damages: Vi::Q_DAMAGE,
-                ad_ratio: 0.0,
                 bonus_ad_ratio: 80.0,
+                ..Default::default()
+            },
+            w_data: AbiltyDamageInfo {
+                bonus_ad_ratio: 1.0 / 35.0, // percent ad
+                target_max_health_ratio: Vi::W_HP_SCALING,
+                ..Default::default()
             },
             e_data: AbiltyDamageInfo {
                 base_damages: Vi::E_DAMAGE,
                 ad_ratio: 120.0,
-                bonus_ad_ratio: 0.0,
+                ..Default::default()
+            },
+            r_data: AbiltyDamageInfo {
+                base_damages: Vi::R_DAMAGE,
+                bonus_ad_ratio: 110.0,
+                ..Default::default()
             },
         }
     }
@@ -66,16 +83,47 @@ impl Vi {
         return out;
     }
 
+    pub fn ability_w(&self, rank: u8, bonus_ad: f64, target_max_health: f64) -> f64 {
+        let percent_health_dmg = 0.01 * self.w_data.target_max_health_ratio[rank as usize]
+            + 0.01 * self.w_data.bonus_ad_ratio * bonus_ad;
+        return percent_health_dmg * target_max_health;
+    }
+
     pub fn ability_e(
         &self,
         rank: u8,
         bonus_ad: f64,
-        crit_info: Option<(&CritAdjuster, CritCalculation)>,
+        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
     ) -> f64 {
         let base_ad = self.get_base_ad();
-        let mut out = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
+        let e_dmg = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
+        let attack = BasicAttack::new(e_dmg, 0.0);
+        return attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
+    }
+
+    pub fn ability_r(&self, rank: u8, bonus_ad: f64) -> f64 {
+        let base_ad = self.get_base_ad();
+        return self.r_data.to_damage_amount(rank, base_ad, bonus_ad);
+    }
+
+    pub fn get_ult_combo_damage(
+        &self,
+        ranks: [u8; 4],
+        bonus_ad: f64,
+        target_max_health: f64,
+        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
+    ) -> f64 {
+        let base_ad = self.get_base_ad();
         let attack = BasicAttack::new(base_ad, bonus_ad);
+        //q , auto , e , (w), ult, auto, e
+        let mut out = 0.0;
+        out += self.ability_q(ranks[0], bonus_ad, Vi::Q_MAX_DAMAGE_CHARGE);
         out += attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
+        out += self.ability_e(ranks[2], bonus_ad, crit_info);
+        out += self.ability_w(ranks[1], bonus_ad, target_max_health);
+        out += self.ability_r(ranks[3], bonus_ad);
+        out += attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
+        out += self.ability_e(ranks[2], bonus_ad, crit_info);
         return out;
     }
 }
@@ -98,6 +146,16 @@ mod tests {
         assert_eq!(
             188,
             vi.ability_q(1, 30.0, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32
+        );
+    }
+
+    #[rstest]
+    fn test_full_combo() {
+        let vi = Vi::new(6);
+        assert_eq!(
+            965,
+            vi.get_ult_combo_damage([0, 0, 2, 0], 40.0, 1000.0, &None)
+                .round() as u32
         );
     }
 }

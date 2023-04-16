@@ -62,7 +62,7 @@ pub struct CritAdjuster {
 }
 
 impl CritAdjuster {
-    pub fn get_multipler(&self, crit_calc: CritCalculation) -> f64 {
+    pub fn get_multipler(&self, crit_calc: &CritCalculation) -> f64 {
         return match crit_calc {
             CritCalculation::NoCrit => 1.0,
             CritCalculation::DidCrit => 1.75 + self.bonus_critical_damage,
@@ -98,7 +98,7 @@ impl BasicAttack {
     pub fn get_damage_to_target(
         &self,
         target: &Target,
-        crit_adjuster: Option<(&CritAdjuster, CritCalculation)>,
+        crit_adjuster: &Option<(&CritAdjuster, CritCalculation)>,
         armor_reducer: Option<&ArmorReducer>,
     ) -> f64 {
         let damage = self.get_total_attack_damage();
@@ -125,10 +125,10 @@ impl BasicAttack {
 
 #[derive(Default, Clone)]
 pub struct Target {
-    base_armor: f64,
-    bonus_armor: f64,
+    pub base_armor: f64,
+    pub bonus_armor: f64,
     magic_resist: f64,
-    max_health: f64,
+    pub max_health: f64,
     current_health: f64,
 }
 
@@ -168,7 +168,7 @@ pub fn get_dps(
 ) -> f64 {
     const CRIT_CALC: CritCalculation = CritCalculation::AverageOutcome;
     let crit_tuple = crit_adjuster.map(|v| (v, CRIT_CALC));
-    let damage = attack.get_damage_to_target(target, crit_tuple, armor_reducer);
+    let damage = attack.get_damage_to_target(target, &crit_tuple, armor_reducer);
     return damage * attack_speed.get_attacks_per_second();
 }
 
@@ -193,7 +193,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let damage = attack.get_damage_to_target(&target, None, None);
+            let damage = attack.get_damage_to_target(&target, &None, None);
             assert_eq!(62, damage.round() as u32)
         }
     }
