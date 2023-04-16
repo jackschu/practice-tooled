@@ -127,30 +127,9 @@ impl BasicAttack {
 pub struct Target {
     pub base_armor: f64,
     pub bonus_armor: f64,
-    magic_resist: f64,
-    pub max_health: f64,
-    current_health: f64,
-}
-
-#[derive(Default)]
-pub struct TargetData {
-    pub base_armor: f64,
-    pub bonus_armor: f64,
     pub magic_resist: f64,
     pub max_health: f64,
     pub current_health: f64,
-}
-
-impl Target {
-    pub fn new(input: TargetData) -> Self {
-        Self {
-            base_armor: input.base_armor,
-            bonus_armor: input.bonus_armor,
-            magic_resist: input.magic_resist,
-            max_health: input.max_health,
-            current_health: input.current_health,
-        }
-    }
 }
 
 pub enum CritCalculation {
@@ -233,11 +212,11 @@ mod tests {
         #[case] reducer: ArmorReducer,
         #[case] expected_armor: f64,
     ) {
-        let target = Target::new(TargetData {
+        let target = Target {
             base_armor,
             bonus_armor,
             ..Default::default()
-        });
+        };
 
         assert_relative_eq!(expected_armor, reducer.get_effective_armor(&target));
     }

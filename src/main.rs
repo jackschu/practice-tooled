@@ -84,10 +84,10 @@ fn example_vi_staring_item() {
 
 fn example_basic_attack_dps() {
     // known issue: doesnt accomodate for non-one ad scaling (kalista) or on hit passives
-    let target = attack::Target::new(attack::TargetData {
+    let target = attack::Target {
         base_armor: 30f64,
-        ..attack::TargetData::default()
-    });
+        ..Default::default()
+    };
 
     let champion_names = load_champion_names();
 

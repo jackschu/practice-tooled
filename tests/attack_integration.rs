@@ -35,11 +35,11 @@ mod tests {
 
         #[case] expected_damage: u32,
     ) {
-        let target = Target::new(TargetData {
+        let target = Target {
             base_armor,
             bonus_armor,
             ..Default::default()
-        });
+        };
 
         let attack = initial_attack.clone();
         reducer.set_from_lethality(lethality, level);

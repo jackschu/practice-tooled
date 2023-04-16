@@ -2,7 +2,7 @@ use crate::attack::AttackSpeed;
 use crate::load_item::ItemStatDeltas;
 
 use super::attack::BasicAttack;
-use super::attack::{Target, TargetData};
+use super::attack::Target;
 use super::core;
 
 use memoize::memoize;
@@ -145,13 +145,13 @@ impl ChampionStats {
         let magic_resist =
             core::stat_at_level(self.magic_resist, self.magic_resist_per_level, level);
         let max_health = core::stat_at_level(self.health, self.health_per_level, level);
-        let target = Target::new(TargetData {
+        let target = Target {
             base_armor,
             bonus_armor: 0.0,
             max_health,
             current_health: max_health,
             magic_resist,
-        });
+        };
 
         return target;
     }

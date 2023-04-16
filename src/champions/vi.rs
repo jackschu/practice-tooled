@@ -1,5 +1,5 @@
 use crate::{
-    attack::{BasicAttack, CritAdjuster, CritCalculation, Target, TargetData},
+    attack::{BasicAttack, CritAdjuster, CritCalculation, Target},
     load_champion::load_champion_stats,
 };
 
@@ -98,7 +98,7 @@ impl Vi {
         let base_ad = self.get_base_ad();
         let e_dmg = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
         let attack = BasicAttack::new(e_dmg, 0.0);
-        return attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
+        return attack.get_damage_to_target(&Target::default(), crit_info, None);
     }
 
     pub fn ability_r(&self, rank: u8, bonus_ad: f64) -> f64 {
@@ -118,11 +118,11 @@ impl Vi {
         //q , auto , e , (w), ult, auto, e
         let mut out = 0.0;
         out += self.ability_q(ranks[0], bonus_ad, Vi::Q_MAX_DAMAGE_CHARGE);
-        out += attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
+        out += attack.get_damage_to_target(&Target::default(), crit_info, None);
         out += self.ability_e(ranks[2], bonus_ad, crit_info);
         out += self.ability_w(ranks[1], bonus_ad, target_max_health);
         out += self.ability_r(ranks[3], bonus_ad);
-        out += attack.get_damage_to_target(&Target::new(TargetData::default()), crit_info, None);
+        out += attack.get_damage_to_target(&Target::default(), crit_info, None);
         out += self.ability_e(ranks[2], bonus_ad, crit_info);
         return out;
     }
