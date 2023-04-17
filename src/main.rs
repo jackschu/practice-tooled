@@ -24,7 +24,7 @@ fn example_vi_ult_combo() {
         champion_stats.add_item_deltas(&item);
     }
 
-    let vi = Vi::new(6);
+    let vi = Vi::new(level);
 
     let combo_raw_damage = vi.get_ult_combo_damage(
         [0, 0, 2, 0],
