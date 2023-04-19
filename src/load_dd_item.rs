@@ -5,14 +5,14 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::load_champion::ChampionStats;
+use super::load_champion::ChampionStats;
 
 use super::load_champion::ChampionStatModifier;
 
 const SUMMONERS_RIFT_MAP_ID: &str = "11";
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct ItemStatDeltas {
+pub struct DDItemStatDeltas {
     #[serde(rename = "FlatArmorMod")]
     pub armor: Option<f64>,
     #[serde(rename = "FlatCritChanceMod")]
@@ -40,7 +40,7 @@ pub struct ItemStatDeltas {
 }
 
 #[memoize]
-pub fn open_item_json() -> Value {
+pub fn open_dd_item_json() -> Value {
     let mut file = File::open("data/item.json").expect("Could not open file");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
@@ -50,7 +50,7 @@ pub fn open_item_json() -> Value {
     return full_value.get("data").map(|v| v.to_owned()).unwrap();
 }
 
-pub fn name_to_id_map() -> HashMap<String, String> {
+fn name_to_id_map() -> HashMap<String, String> {
     let mut output_map = HashMap::new();
     let all_items = load_items();
     all_items.iter().for_each(|(key, value)| {
@@ -61,7 +61,7 @@ pub fn name_to_id_map() -> HashMap<String, String> {
     return output_map;
 }
 
-pub fn load_item(name: &str) -> ItemStatDeltas {
+pub fn load_dd_item(name: &str) -> DDItemStatDeltas {
     let map = name_to_id_map();
     let id = map.get(name).unwrap();
     let item_value = load_items()
@@ -69,11 +69,11 @@ pub fn load_item(name: &str) -> ItemStatDeltas {
         .and_then(|v| v.get("stats"))
         .unwrap()
         .clone();
-    let item_obj: ItemStatDeltas = serde_json::from_value(item_value).unwrap();
+    let item_obj: DDItemStatDeltas = serde_json::from_value(item_value).unwrap();
     return item_obj;
 }
 
-impl ChampionStatModifier for ItemStatDeltas {
+impl ChampionStatModifier for DDItemStatDeltas {
     fn modify_champion_stats(&self, stats: &mut ChampionStats) {
         stats.armor += self.armor.unwrap_or(0.0);
         stats.magic_resist += self.magic_resist.unwrap_or(0.0);
@@ -87,8 +87,9 @@ impl ChampionStatModifier for ItemStatDeltas {
         stats.move_speed += self.flat_movement_speed.unwrap_or(0.0);
     }
 }
-pub fn load_items() -> serde_json::Map<std::string::String, Value> {
-    let json_value = open_item_json();
+
+fn load_items() -> serde_json::Map<std::string::String, Value> {
+    let json_value = open_dd_item_json();
     let mut filtered_items = json_value.as_object().unwrap().clone();
     filtered_items.retain(|_key, value| {
         let purchasable = value
@@ -131,7 +132,7 @@ mod tests {
 
     #[rstest]
     fn test_load_item_stats() {
-        let long_sword_stats = load_item("Long Sword");
+        let long_sword_stats = load_dd_item("Long Sword");
         assert_eq!(long_sword_stats.attack_damage.unwrap(), 10.0);
     }
 }

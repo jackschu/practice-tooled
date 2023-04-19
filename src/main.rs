@@ -3,7 +3,7 @@ use practice_tooled::{
     champions::Vi,
     core::{lethality_to_pen, resist_damage},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
-    load_item::load_item,
+    load_item::load_dd_item,
 };
 
 fn main() {
@@ -20,7 +20,7 @@ fn example_vi_ult_combo() {
     let lethality = 10.0; // from dirk
 
     for item_name in item_names {
-        let item = load_item(item_name);
+        let item = load_dd_item(item_name);
         item.modify_champion_stats(&mut champion_stats);
     }
 
@@ -67,7 +67,7 @@ fn example_vi_staring_item() {
     for item_name in item_names {
         let mut copy = champion.clone();
         if item_name != NO_ITEM {
-            let item = load_item(item_name);
+            let item = load_dd_item(item_name);
             //println!("{:#?}", item);
             item.modify_champion_stats(&mut copy);
         }
