@@ -3,7 +3,7 @@ use practice_tooled::{
     champions::Vi,
     core::{lethality_to_pen, resist_damage},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
-    load_item::load_dd_item,
+    load_dd_item::load_dd_item,
 };
 
 fn main() {
