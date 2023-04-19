@@ -64,6 +64,14 @@ pub struct ChampionStats {
     pub life_steal: f64,
     #[serde(skip)]
     pub percent_movement_speed: f64,
+    #[serde(skip)]
+    pub ability_haste: f64,
+    #[serde(skip)]
+    pub omnivamp: f64,
+    #[serde(skip)]
+    pub ability_power: f64,
+    #[serde(skip)]
+    pub percent_armor_pen: f64,
 }
 
 pub trait ChampionStatModifier {

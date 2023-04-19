@@ -23,7 +23,7 @@ fn example_vi_ult_combo() {
     let lethality = 10.0; // from dirk
 
     for item_name in item_names {
-        let item = load_dd_item(item_name);
+        let item = load_wiki_item_stats(item_name);
         item.modify_champion_stats(&mut champion_stats);
     }
 

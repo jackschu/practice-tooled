@@ -3,6 +3,8 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::{collections::HashMap, fs::File, io::Read};
 
+use crate::load_champion::{ChampionStatModifier, ChampionStats};
+
 #[derive(Deserialize)]
 pub struct WikiItemStatDeltas {
     #[serde(rename = "ad")]
@@ -78,9 +80,41 @@ pub fn open_wiki_item_json() -> HashMap<String, Value> {
     return output_map;
 }
 
+impl ChampionStatModifier for WikiItemStatDeltas {
+    fn modify_champion_stats(&self, stats: &mut ChampionStats) {
+        stats.armor += self.armor.unwrap_or(0.0);
+        stats.magic_resist += self.magic_resist.unwrap_or(0.0);
+        stats.health_regen += self.hp5flat.unwrap_or(0.0);
+        stats.health += self.health.unwrap_or(0.0);
+        stats.mana += self.mana.unwrap_or(0.0);
+        stats.bonus_attack_damage += self.attack_damage.unwrap_or(0.0);
+        stats.bonus_attack_speed += self.attack_speed.unwrap_or(0.0);
+        stats.life_steal += self.lifesteal.unwrap_or(0.0);
+        stats.percent_movement_speed += self.percent_movement_speed.unwrap_or(0.0);
+        stats.move_speed += self.flat_movement_speed.unwrap_or(0.0);
+        stats.ability_haste += self.ability_haste.unwrap_or(0.0);
+
+        stats.ability_power += self.ability_power.unwrap_or(0.0);
+        stats.percent_armor_pen += self.percent_amror_pen.unwrap_or(0.0);
+        stats.omnivamp += self.omnivamp.unwrap_or(0.0);
+    }
+}
+
 pub fn load_wiki_item_stats(name: &str) -> WikiItemStatDeltas {
     let value = open_wiki_item_json().get(name).unwrap().clone();
 
     let out: WikiItemStatDeltas = serde_json::from_value(value).unwrap();
     return out;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    fn test_load_item_stats() {
+        let long_sword_stats = load_wiki_item_stats("Long Sword");
+        assert_eq!(long_sword_stats.attack_damage.unwrap(), 10.0);
+    }
 }
