@@ -1,11 +1,11 @@
 use memoize::memoize;
 use serde::Deserialize;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::{collections::HashMap, fs::File, io::Read};
 
 use crate::load_champion::{ChampionStatModifier, ChampionStats};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct WikiItemStatDeltas {
     #[serde(rename = "ad")]
     pub attack_damage: Option<f64>,
@@ -66,18 +66,7 @@ pub fn open_wiki_item_json() -> HashMap<String, Value> {
     file.read_to_string(&mut contents)
         .expect("Could not read file");
 
-    let full_value: Value = serde_json::from_str(&contents).expect("could not unmarshal");
-    let read_object = full_value.as_object().unwrap();
-    let mut output_map = HashMap::new();
-
-    read_object.iter().for_each(|(k, v)| {
-        let to_insert = match v.get("stats") {
-            Some(stats) => stats.to_owned(),
-            None => Value::Object(Map::new()),
-        };
-        output_map.entry(k.to_string()).or_insert(to_insert);
-    });
-    return output_map;
+    return serde_json::from_str(&contents).expect("could not unmarshal");
 }
 
 impl ChampionStatModifier for WikiItemStatDeltas {
@@ -102,10 +91,42 @@ impl ChampionStatModifier for WikiItemStatDeltas {
 }
 
 pub fn load_wiki_item_stats(name: &str) -> WikiItemStatDeltas {
-    let value = open_wiki_item_json().get(name).unwrap().clone();
+    let all_items = open_wiki_item_json();
+    let maybe_stats = all_items.get(name).unwrap().get("stats");
+    return match maybe_stats {
+        Some(stats) => serde_json::from_value(stats.clone()).unwrap(),
+        None => WikiItemStatDeltas {
+            ..Default::default()
+        },
+    };
+}
 
-    let out: WikiItemStatDeltas = serde_json::from_value(value).unwrap();
-    return out;
+#[derive(Deserialize, Debug)]
+pub struct WikiItemEffect {
+    pub name: String,
+    pub description: String,
+    pub unique: bool,
+}
+
+pub fn load_wiki_item_effects(name: &str) -> Vec<WikiItemEffect> {
+    let all_items = open_wiki_item_json();
+    let maybe_effects = all_items.get(name).unwrap().get("effects");
+    if let None = maybe_effects {
+        return Vec::new();
+    }
+    let effects_value = maybe_effects.unwrap();
+
+    let all_effects: HashMap<String, Value> =
+        serde_json::from_value(effects_value.to_owned()).expect("could not deserialze effect map");
+    let passive_values: HashMap<String, Value> = all_effects
+        .into_iter()
+        .filter(|(key, _)| key.starts_with("pass"))
+        .collect();
+
+    return passive_values
+        .into_iter()
+        .map(|(_, value)| serde_json::from_value(value).unwrap())
+        .collect();
 }
 
 #[cfg(test)]
