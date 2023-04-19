@@ -5,6 +5,10 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::load_champion::ChampionStats;
+
+use super::load_champion::ChampionStatModifier;
+
 const SUMMONERS_RIFT_MAP_ID: &str = "11";
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -69,6 +73,20 @@ pub fn load_item(name: &str) -> ItemStatDeltas {
     return item_obj;
 }
 
+impl ChampionStatModifier for ItemStatDeltas {
+    fn modify_champion_stats(&self, stats: &mut ChampionStats) {
+        stats.armor += self.armor.unwrap_or(0.0);
+        stats.magic_resist += self.magic_resist.unwrap_or(0.0);
+        stats.health_regen += self.health_regen.unwrap_or(0.0);
+        stats.health += self.health.unwrap_or(0.0);
+        stats.mana += self.mana.unwrap_or(0.0);
+        stats.bonus_attack_damage += self.attack_damage.unwrap_or(0.0);
+        stats.bonus_attack_speed += self.bonus_attack_speed.unwrap_or(0.0);
+        stats.life_steal += self.life_steal.unwrap_or(0.0);
+        stats.percent_movement_speed += self.percent_movement_speed.unwrap_or(0.0);
+        stats.move_speed += self.flat_movement_speed.unwrap_or(0.0);
+    }
+}
 pub fn load_items() -> serde_json::Map<std::string::String, Value> {
     let json_value = open_item_json();
     let mut filtered_items = json_value.as_object().unwrap().clone();

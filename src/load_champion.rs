@@ -1,6 +1,4 @@
-use crate::attack::AttackSpeed;
-use crate::load_item::ItemStatDeltas;
-
+use super::attack::AttackSpeed;
 use super::attack::BasicAttack;
 use super::attack::Target;
 use super::core;
@@ -68,19 +66,8 @@ pub struct ChampionStats {
     pub percent_movement_speed: f64,
 }
 
-impl ChampionStats {
-    pub fn add_item_deltas(&mut self, item: &ItemStatDeltas) {
-        self.armor += item.armor.unwrap_or(0.0);
-        self.magic_resist += item.magic_resist.unwrap_or(0.0);
-        self.health_regen += item.health_regen.unwrap_or(0.0);
-        self.health += item.health.unwrap_or(0.0);
-        self.mana += item.mana.unwrap_or(0.0);
-        self.bonus_attack_damage += item.attack_damage.unwrap_or(0.0);
-        self.bonus_attack_speed += item.bonus_attack_speed.unwrap_or(0.0);
-        self.life_steal += item.life_steal.unwrap_or(0.0);
-        self.percent_movement_speed += item.percent_movement_speed.unwrap_or(0.0);
-        self.move_speed += item.flat_movement_speed.unwrap_or(0.0);
-    }
+pub trait ChampionStatModifier {
+    fn modify_champion_stats(&self, stats: &mut ChampionStats);
 }
 
 #[memoize]

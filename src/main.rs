@@ -2,7 +2,7 @@ use practice_tooled::{
     attack::{self, ArmorReducer},
     champions::Vi,
     core::{lethality_to_pen, resist_damage},
-    load_champion::{load_champion_names, load_champion_stats},
+    load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_item::load_item,
 };
 
@@ -21,7 +21,7 @@ fn example_vi_ult_combo() {
 
     for item_name in item_names {
         let item = load_item(item_name);
-        champion_stats.add_item_deltas(&item);
+        item.modify_champion_stats(&mut champion_stats);
     }
 
     let vi = Vi::new(level);
@@ -69,7 +69,7 @@ fn example_vi_staring_item() {
         if item_name != NO_ITEM {
             let item = load_item(item_name);
             //println!("{:#?}", item);
-            copy.add_item_deltas(&item);
+            item.modify_champion_stats(&mut copy);
         }
         let dps = attack::get_dps(
             &copy.as_attack_speed(level),
