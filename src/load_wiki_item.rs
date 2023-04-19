@@ -16,7 +16,7 @@ pub struct WikiItemStatDeltas {
     #[serde(rename = "armor")]
     pub armor: Option<f64>,
     #[serde(rename = "armpen")]
-    pub percent_amror_pen: Option<f64>,
+    pub percent_armor_pen: Option<f64>,
     #[serde(rename = "as")]
     pub attack_speed: Option<f64>,
     #[serde(rename = "crit")]
@@ -89,13 +89,14 @@ impl ChampionStatModifier for WikiItemStatDeltas {
         stats.mana += self.mana.unwrap_or(0.0);
         stats.bonus_attack_damage += self.attack_damage.unwrap_or(0.0);
         stats.bonus_attack_speed += self.attack_speed.unwrap_or(0.0);
+        stats.lethality += self.lethality.unwrap_or(0.0);
         stats.life_steal += self.lifesteal.unwrap_or(0.0);
         stats.percent_movement_speed += self.percent_movement_speed.unwrap_or(0.0);
         stats.move_speed += self.flat_movement_speed.unwrap_or(0.0);
         stats.ability_haste += self.ability_haste.unwrap_or(0.0);
 
         stats.ability_power += self.ability_power.unwrap_or(0.0);
-        stats.percent_armor_pen += self.percent_amror_pen.unwrap_or(0.0);
+        stats.percent_armor_pen += self.percent_armor_pen.unwrap_or(0.0);
         stats.omnivamp += self.omnivamp.unwrap_or(0.0);
     }
 }

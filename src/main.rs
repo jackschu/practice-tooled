@@ -1,5 +1,5 @@
 use practice_tooled::{
-    attack::{self, ArmorReducer},
+    attack::{self},
     champions::Vi,
     core::{lethality_to_pen, resist_damage},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
@@ -20,7 +20,7 @@ fn example_vi_ult_combo() {
     let mut champion_stats = load_champion_stats("Vi");
 
     let item_names = ["Serrated Dirk", "Long Sword"];
-    let lethality = 10.0; // from dirk
+    let lethality = 10.0; // from dirk passive
 
     for item_name in item_names {
         let item = load_wiki_item_stats(item_name);
@@ -37,10 +37,8 @@ fn example_vi_ult_combo() {
     );
     // ignores armor reduction from W so far
 
-    let armor_reducer = ArmorReducer {
-        flat_armor_pen: lethality_to_pen(lethality, level),
-        ..Default::default()
-    };
+    let mut armor_reducer = champion_stats.as_armor_reducer(level);
+    armor_reducer.flat_armor_pen += lethality_to_pen(lethality, level);
     let effective_armor = armor_reducer.get_effective_armor(&target);
     let final_damage = resist_damage(combo_raw_damage, effective_armor);
 
