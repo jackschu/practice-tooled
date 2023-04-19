@@ -4,9 +4,11 @@ use practice_tooled::{
     core::{lethality_to_pen, resist_damage},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
+    load_wiki_item::open_wiki_item_json,
 };
 
 fn main() {
+    open_wiki_item_json();
     example_vi_ult_combo();
 }
 
