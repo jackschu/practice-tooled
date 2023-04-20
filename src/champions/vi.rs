@@ -1,6 +1,7 @@
 use crate::{
-    attack::{BasicAttack, CritAdjuster, CritCalculation, Target},
+    attack::{BasicAttack, CritAdjuster, CritCalculation},
     load_champion::load_champion_stats,
+    target::Target,
 };
 
 pub struct Vi {

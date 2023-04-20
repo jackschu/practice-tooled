@@ -1,4 +1,4 @@
-use crate::core::lethality_to_pen;
+use crate::{core::lethality_to_pen, target::Target};
 
 use super::core;
 
@@ -121,15 +121,6 @@ impl BasicAttack {
             bonus_attack_damage,
         }
     }
-}
-
-#[derive(Default, Clone)]
-pub struct Target {
-    pub base_armor: f64,
-    pub bonus_armor: f64,
-    pub magic_resist: f64,
-    pub max_health: f64,
-    pub current_health: f64,
 }
 
 pub enum CritCalculation {

@@ -5,6 +5,7 @@ use practice_tooled::{
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
     load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats, open_wiki_item_json},
+    target::Target,
 };
 
 fn main() {
@@ -93,7 +94,7 @@ fn example_vi_staring_item() {
 #[allow(dead_code)]
 fn example_basic_attack_dps() {
     // known issue: doesnt accomodate for non-one ad scaling (kalista) or on hit passives
-    let target = attack::Target {
+    let target = Target {
         base_armor: 30f64,
         ..Default::default()
     };

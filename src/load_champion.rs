@@ -3,8 +3,8 @@ use crate::core::lethality_to_pen;
 use super::attack::ArmorReducer;
 use super::attack::AttackSpeed;
 use super::attack::BasicAttack;
-use super::attack::Target;
 use super::core;
+use super::target::Target;
 
 use memoize::memoize;
 
