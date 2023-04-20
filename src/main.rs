@@ -1,4 +1,5 @@
 use practice_tooled::{
+    armor_reducer::ArmorReducer,
     attack::{self},
     champions::Vi,
     core::{lethality_to_pen, resist_damage},
@@ -42,7 +43,7 @@ fn example_vi_ult_combo() {
     );
     // ignores armor reduction from W so far
 
-    let mut armor_reducer = champion_stats.as_armor_reducer(level);
+    let mut armor_reducer: ArmorReducer = (&champion_stats, level).into();
     armor_reducer.flat_armor_pen += lethality_to_pen(lethality, level);
     let effective_armor = armor_reducer.get_effective_armor(&target);
     let final_damage = resist_damage(combo_raw_damage, effective_armor);

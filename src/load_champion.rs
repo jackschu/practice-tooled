@@ -1,6 +1,3 @@
-use crate::core::lethality_to_pen;
-
-use super::armor_reducer::ArmorReducer;
 use super::attack::AttackSpeed;
 use super::attack::BasicAttack;
 use super::core;
@@ -129,14 +126,6 @@ impl ChampionStats {
         };
 
         return attack;
-    }
-
-    pub fn as_armor_reducer(&self, level: u8) -> ArmorReducer {
-        return ArmorReducer {
-            flat_armor_pen: lethality_to_pen(self.lethality, level),
-            percent_armor_pen: self.percent_armor_pen,
-            ..Default::default()
-        };
     }
 
     pub fn as_attack_speed(&self, level: u8) -> AttackSpeed {
