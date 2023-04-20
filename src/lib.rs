@@ -1,3 +1,4 @@
+pub mod armor_reducer;
 pub mod attack;
 pub mod champions;
 pub mod core;

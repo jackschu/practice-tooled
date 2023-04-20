@@ -4,7 +4,7 @@ use practice_tooled::attack;
 mod tests {
     use super::*;
     use attack::*;
-    use practice_tooled::target::Target;
+    use practice_tooled::{armor_reducer::ArmorReducer, target::Target};
     use rstest::rstest;
 
     #[rstest]

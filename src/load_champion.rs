@@ -1,6 +1,6 @@
 use crate::core::lethality_to_pen;
 
-use super::attack::ArmorReducer;
+use super::armor_reducer::ArmorReducer;
 use super::attack::AttackSpeed;
 use super::attack::BasicAttack;
 use super::core;
