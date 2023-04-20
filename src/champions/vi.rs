@@ -70,9 +70,7 @@ impl Vi {
     }
 
     pub fn get_base_ad(&self) -> f64 {
-        return load_champion_stats(Vi::NAME)
-            .as_basic_attack(self.level)
-            .base_attack_damage;
+        BasicAttack::from((&load_champion_stats(Vi::NAME), self.level)).base_attack_damage
     }
 
     pub fn ability_q(&self, rank: u8, bonus_ad: f64, charge_seconds: f64) -> f64 {

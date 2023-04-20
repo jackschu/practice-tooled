@@ -1,8 +1,3 @@
-use super::attack::AttackSpeed;
-use super::attack::BasicAttack;
-use super::core;
-use super::target::Target;
-
 use memoize::memoize;
 
 use serde::Deserialize;
@@ -115,47 +110,10 @@ pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
     return champion_stats;
 }
 
-impl ChampionStats {
-    pub fn as_basic_attack(&self, level: u8) -> BasicAttack {
-        let attack_damage =
-            core::stat_at_level(self.base_attack_damage, self.attack_damage_per_level, level)
-                + self.bonus_attack_damage;
-        let attack = BasicAttack {
-            base_attack_damage: attack_damage,
-            ..Default::default()
-        };
-
-        return attack;
-    }
-
-    pub fn as_attack_speed(&self, level: u8) -> AttackSpeed {
-        let bonus_speed =
-            core::stat_at_level(0.0, self.attack_speed_per_level, level) + self.bonus_attack_speed;
-        return AttackSpeed {
-            base: self.attack_speed,
-            bonus: bonus_speed,
-        };
-    }
-
-    pub fn as_target(&self, level: u8) -> Target {
-        let base_armor = core::stat_at_level(self.armor, self.armor_per_level, level);
-        let magic_resist =
-            core::stat_at_level(self.magic_resist, self.magic_resist_per_level, level);
-        let max_health = core::stat_at_level(self.health, self.health_per_level, level);
-        let target = Target {
-            base_armor,
-            bonus_armor: 0.0,
-            max_health,
-            current_health: max_health,
-            magic_resist,
-        };
-
-        return target;
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::attack::BasicAttack;
+
     use super::*;
     use rstest::rstest;
 
@@ -168,7 +126,7 @@ mod tests {
     #[rstest]
     fn test_load_champion_basic_attack() {
         let stats = load_champion_stats("Vi");
-        let attack = stats.as_basic_attack(5);
+        let attack: BasicAttack = (&stats, 5).into();
         assert_eq!(72.0, attack.base_attack_damage.round()); // values from game, patch 13.6
     }
 }

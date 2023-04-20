@@ -1,4 +1,4 @@
-use crate::{armor_reducer::ArmorReducer, target::Target};
+use crate::{armor_reducer::ArmorReducer, load_champion::ChampionStats, target::Target};
 
 use super::core;
 
@@ -66,6 +66,35 @@ impl BasicAttack {
             base_attack_damage,
             bonus_attack_damage,
         }
+    }
+}
+
+impl From<(&ChampionStats, u8)> for BasicAttack {
+    fn from(tuple: (&ChampionStats, u8)) -> BasicAttack {
+        let (stats, level) = tuple;
+        let attack_damage = core::stat_at_level(
+            stats.base_attack_damage,
+            stats.attack_damage_per_level,
+            level,
+        ) + stats.bonus_attack_damage;
+        let attack = BasicAttack {
+            base_attack_damage: attack_damage,
+            ..Default::default()
+        };
+
+        return attack;
+    }
+}
+
+impl From<(&ChampionStats, u8)> for AttackSpeed {
+    fn from(tuple: (&ChampionStats, u8)) -> AttackSpeed {
+        let (stats, level) = tuple;
+        let bonus_speed = core::stat_at_level(0.0, stats.attack_speed_per_level, level)
+            + stats.bonus_attack_speed;
+        return AttackSpeed {
+            base: stats.attack_speed,
+            bonus: bonus_speed,
+        };
     }
 }
 
