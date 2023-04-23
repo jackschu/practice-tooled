@@ -1,4 +1,5 @@
 use memoize::memoize;
+
 use serde::Deserialize;
 use serde_json::Value;
 use std::{collections::HashMap, fs::File, io::Read};
@@ -8,7 +9,7 @@ use crate::{
     load_champion::{ChampionStatModifier, ChampionStats},
 };
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Default, Debug, Clone)]
 pub struct WikiItemStatDeltas {
     #[serde(rename = "ad")]
     pub attack_damage: Option<f64>,
@@ -93,9 +94,10 @@ impl ChampionStatModifier for WikiItemStatDeltas {
     }
 }
 
-pub fn load_wiki_item_stats(name: &str) -> WikiItemStatDeltas {
+#[memoize]
+pub fn load_wiki_item_stats(name: String) -> WikiItemStatDeltas {
     let all_items = open_wiki_item_json();
-    let maybe_stats = all_items.get(name).unwrap().get("stats");
+    let maybe_stats = all_items.get(name.as_str()).unwrap().get("stats");
     return match maybe_stats {
         Some(stats) => serde_json::from_value(stats.clone()).unwrap(),
         None => WikiItemStatDeltas {
@@ -104,9 +106,10 @@ pub fn load_wiki_item_stats(name: &str) -> WikiItemStatDeltas {
     };
 }
 
-pub fn load_wiki_item_effects(name: &str) -> Vec<UnknownItemEffect> {
+#[memoize]
+pub fn load_wiki_item_effects(name: String) -> Vec<UnknownItemEffect> {
     let all_items = open_wiki_item_json();
-    let maybe_effects = all_items.get(name).unwrap().get("effects");
+    let maybe_effects = all_items.get(name.as_str()).unwrap().get("effects");
     if let None = maybe_effects {
         return Vec::new();
     }
@@ -132,7 +135,7 @@ mod tests {
 
     #[rstest]
     fn test_load_item_stats() {
-        let long_sword_stats = load_wiki_item_stats("Long Sword");
+        let long_sword_stats = load_wiki_item_stats("Long Sword".to_string());
         assert_eq!(long_sword_stats.attack_damage.unwrap(), 10.0);
     }
 }

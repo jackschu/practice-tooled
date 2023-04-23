@@ -10,8 +10,10 @@ use practice_tooled::{
 
 fn main() {
     open_wiki_item_json();
-    load_wiki_item_stats("Long Sword");
-    example_vi_ult_combo();
+    load_wiki_item_stats("Long Sword".to_string());
+    for _ in 1..500 {
+        example_vi_ult_combo();
+    }
 }
 
 #[allow(dead_code)]
@@ -22,13 +24,13 @@ fn example_vi_ult_combo() {
 
     let item_names = ["Serrated Dirk", "Long Sword", "Last Whisper"];
     for item_name in item_names {
-        let item = load_wiki_item_stats(item_name);
+        let item = load_wiki_item_stats(item_name.to_string());
 
-        let concrete_item_effects: Vec<ConcreteItemEffect> = load_wiki_item_effects(item_name)
-            .iter()
-            .map(|v| v.into())
-            .collect();
-        println!("Loaded item with effects: {:?}", concrete_item_effects);
+        let concrete_item_effects: Vec<ConcreteItemEffect> =
+            load_wiki_item_effects(item_name.to_string())
+                .iter()
+                .map(|v| v.into())
+                .collect();
         concrete_item_effects
             .iter()
             .for_each(|v| v.apply_to_champ(&mut vi));
@@ -36,7 +38,7 @@ fn example_vi_ult_combo() {
     }
 
     vi.ult_combo([0, 0, 2, 0], &mut leblanc, &None);
-    // ignores armor reduction from W so far
+    //    ignores armor reduction from W so far
 
     println!(
         "Full combo deals {:.2} out of {:.2} hp against a target with {} armor",
@@ -49,8 +51,8 @@ fn example_vi_ult_combo() {
 #[allow(dead_code)]
 fn example_vi_staring_item() {
     let level = 2;
-    let target: VitalityData = (&load_champion_stats("Leblanc"), level).into();
-    let champion = load_champion_stats("Vi");
+    let target: VitalityData = (&load_champion_stats("Leblanc".to_string()), level).into();
+    let champion = load_champion_stats("Vi".to_string());
 
     const NO_ITEM: &str = "NO_ITEM";
     let item_names = [
@@ -93,7 +95,7 @@ fn example_basic_attack_dps() {
     let champion_names = load_champion_names();
 
     for name in champion_names {
-        let champion = load_champion_stats(&name);
+        let champion = load_champion_stats(name.clone());
         for level in 1..19 {
             let basic_attack = (&champion, level).into();
             let speed = (&champion, level).into();

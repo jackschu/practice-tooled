@@ -4,7 +4,7 @@ use crate::champions::champion::Champion;
 use crate::{load_champion::ChampionStatModifier, load_wiki_item::WikiItemStatDeltas};
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct UnknownItemEffect {
     pub name: String,
     pub description: String,

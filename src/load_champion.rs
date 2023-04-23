@@ -98,7 +98,8 @@ pub fn load_champion_names() -> Vec<String> {
     return names;
 }
 
-pub fn load_champion_stats(champion_name: &str) -> ChampionStats {
+#[memoize]
+pub fn load_champion_stats(champion_name: String) -> ChampionStats {
     let data = open_champion_json().unwrap();
     let champion_stats_json = data
         .get(champion_name)
@@ -120,13 +121,13 @@ mod tests {
 
     #[rstest]
     fn test_can_load_sivir() {
-        let stats = load_champion_stats("Sivir");
+        let stats = load_champion_stats("Sivir".to_string());
         assert_eq!(stats.critical_strike_chance, 0.0);
     }
 
     #[rstest]
     fn test_load_champion_basic_attack() {
-        let stats = load_champion_stats("Vi");
+        let stats = load_champion_stats("Vi".to_string());
         let attack: BasicAttack = (&stats, 5).into();
         assert_eq!(72.0, attack.base_attack_damage.round()); // values from game, patch 13.6
     }

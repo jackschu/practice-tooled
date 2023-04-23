@@ -38,7 +38,7 @@ impl Leblanc {
     const NAME: &str = "Leblanc";
 
     pub fn new(level: u8) -> Leblanc {
-        let stats = load_champion_stats(Leblanc::NAME);
+        let stats = load_champion_stats(Leblanc::NAME.to_string());
         let health = stat_at_level(stats.health, stats.health_per_level, level);
         let initial_armor = stats.armor;
         return Leblanc {

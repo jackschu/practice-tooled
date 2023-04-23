@@ -73,7 +73,7 @@ impl Vi {
 
     // TODO, probably have ability ranks povided at construction time
     pub fn new(level: u8) -> Vi {
-        let stats = load_champion_stats(Vi::NAME);
+        let stats = load_champion_stats(Vi::NAME.to_string());
         let health = stat_at_level(stats.health, stats.health_per_level, level);
         let initial_armor = stats.armor;
         return Vi {
@@ -105,7 +105,7 @@ impl Vi {
     }
 
     pub fn get_base_ad(&self) -> f64 {
-        BasicAttack::from((&load_champion_stats(Vi::NAME), self.level)).base_attack_damage
+        BasicAttack::from((&self.stats, self.level)).base_attack_damage
     }
     pub fn get_bonus_ad(&self) -> f64 {
         self.stats.bonus_attack_damage
