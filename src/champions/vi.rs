@@ -1,5 +1,6 @@
 use crate::{
     attack::{BasicAttack, CritAdjuster, CritCalculation},
+    core::stat_at_level,
     load_champion::{load_champion_stats, ChampionStats},
     target::VitalityData,
 };
@@ -17,10 +18,11 @@ impl Champion for Vi {
     fn get_stats(&self) -> &ChampionStats {
         &self.stats
     }
+
     fn get_current_health(&self) -> f64 {
         self.current_health
     }
-    fn get_health_mut(&mut self) -> &mut f64 {
+    fn get_current_health_mut(&mut self) -> &mut f64 {
         return &mut self.current_health;
     }
     fn get_initial_armor(&self) -> f64 {
@@ -72,7 +74,7 @@ impl Vi {
     // TODO, probably have ability ranks povided at construction time
     pub fn new(level: u8) -> Vi {
         let stats = load_champion_stats(Vi::NAME);
-        let health = stats.health;
+        let health = stat_at_level(stats.health, stats.health_per_level, level);
         let initial_armor = stats.armor;
         return Vi {
             level,

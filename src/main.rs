@@ -1,7 +1,7 @@
 use practice_tooled::{
     armor_reducer::ArmorReducer,
     attack::{self},
-    champions::Vi,
+    champions::{champion::Champion, leblanc::Leblanc, Vi},
     core::resist_damage,
     item_effects::{ChampionApplyable, ConcreteItemEffect},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
@@ -21,8 +21,9 @@ fn example_vi_ult_combo() {
     let level = 6;
     let target: VitalityData = (&load_champion_stats("Leblanc"), level).into();
     let mut vi = Vi::new(level);
+    let mut leblanc = Leblanc::new(level);
 
-    let item_names = ["Serrated Dirk", "Long Sword"];
+    let item_names = ["Serrated Dirk", "Long Sword", "Last Whisper"];
     for item_name in item_names {
         let item = load_wiki_item_stats(item_name);
 
@@ -43,12 +44,20 @@ fn example_vi_ult_combo() {
     let armor_reducer: ArmorReducer = (&vi.stats, level).into();
     let effective_armor = armor_reducer.get_effective_armor(&target);
     let final_damage = resist_damage(combo_raw_damage, effective_armor);
+    leblanc.receive_damage(&vi, combo_raw_damage);
 
     println!(
         "Full combo deals {:.2} out of {:.2} hp against a target with {} armor",
         final_damage,
         target.max_health,
         target.base_armor + target.bonus_armor
+    );
+
+    println!(
+        "Full combo deals {:.2} out of {:.2} hp against a target with {} armor",
+        leblanc.get_max_health() - leblanc.get_current_health(),
+        leblanc.get_max_health(),
+        leblanc.get_base_armor() + leblanc.get_bonus_armor(),
     );
 }
 

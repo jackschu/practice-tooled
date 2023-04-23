@@ -8,7 +8,7 @@ use crate::{
 pub trait Champion {
     fn get_stats_mut(&mut self) -> &mut ChampionStats;
     fn get_stats(&self) -> &ChampionStats;
-    fn get_health_mut(&mut self) -> &mut f64;
+    fn get_current_health_mut(&mut self) -> &mut f64;
     fn get_current_health(&self) -> f64;
     fn get_level(&self) -> u8;
 
@@ -44,7 +44,7 @@ pub trait Champion {
         let target_data = self.get_vitality_data();
         let effective_armor = armor_reducer.get_effective_armor(&target_data);
         let final_damage = resist_damage(damage, effective_armor);
-        let health = self.get_health_mut();
+        let health = self.get_current_health_mut();
         *health = *health - final_damage;
     }
 }
