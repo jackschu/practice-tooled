@@ -4,13 +4,23 @@ use crate::{
     target::Target,
 };
 
+pub trait Champion {
+    fn get_stats_mut(&mut self) -> &mut ChampionStats;
+}
+
+impl Champion for Vi {
+    fn get_stats_mut(&mut self) -> &mut ChampionStats {
+        let out = &mut self.stats;
+        return out;
+    }
+}
+
 pub struct Vi {
     pub level: u8,
     pub q_data: AbiltyDamageInfo,
     pub w_data: AbiltyDamageInfo,
     pub e_data: AbiltyDamageInfo,
     pub r_data: AbiltyDamageInfo,
-
     pub stats: ChampionStats,
 }
 

@@ -2,8 +2,8 @@ use practice_tooled::{
     armor_reducer::ArmorReducer,
     attack::{self},
     champions::Vi,
-    core::{lethality_to_pen, resist_damage},
-    item_effects::ConcreteItemEffect,
+    core::resist_damage,
+    item_effects::{ChampionApplyable, ConcreteItemEffect},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
     load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats, open_wiki_item_json},
@@ -23,24 +23,24 @@ fn example_vi_ult_combo() {
     let mut vi = Vi::new(level);
 
     let item_names = ["Serrated Dirk", "Long Sword"];
-    let lethality = 10.0; // from dirk passive
-
     for item_name in item_names {
         let item = load_wiki_item_stats(item_name);
 
-        let concrete_item: Vec<ConcreteItemEffect> = load_wiki_item_effects(item_name)
+        let concrete_item_effects: Vec<ConcreteItemEffect> = load_wiki_item_effects(item_name)
             .iter()
             .map(|v| v.into())
             .collect();
-        println!("Loaded item with effects: {:?}", concrete_item);
+        println!("Loaded item with effects: {:?}", concrete_item_effects);
+        concrete_item_effects
+            .iter()
+            .for_each(|v| v.apply_to_champ(&mut vi));
         item.modify_champion_stats(&mut vi.stats);
     }
 
     let combo_raw_damage = vi.get_ult_combo_damage([0, 0, 2, 0], target.max_health, &None);
     // ignores armor reduction from W so far
 
-    let mut armor_reducer: ArmorReducer = (&vi.stats, level).into();
-    armor_reducer.flat_armor_pen += lethality_to_pen(lethality, level);
+    let armor_reducer: ArmorReducer = (&vi.stats, level).into();
     let effective_armor = armor_reducer.get_effective_armor(&target);
     let final_damage = resist_damage(combo_raw_damage, effective_armor);
 
