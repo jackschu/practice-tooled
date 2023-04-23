@@ -76,10 +76,10 @@ impl From<(&ChampionStats, u8)> for BasicAttack {
             stats.base_attack_damage,
             stats.attack_damage_per_level,
             level,
-        ) + stats.bonus_attack_damage;
+        );
         let attack = BasicAttack {
             base_attack_damage: attack_damage,
-            ..Default::default()
+            bonus_attack_damage: stats.bonus_attack_damage,
         };
 
         return attack;

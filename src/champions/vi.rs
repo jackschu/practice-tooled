@@ -107,6 +107,7 @@ impl Vi {
     pub fn get_base_ad(&self) -> f64 {
         BasicAttack::from((&self.stats, self.level)).base_attack_damage
     }
+
     pub fn get_bonus_ad(&self) -> f64 {
         self.stats.bonus_attack_damage
     }
