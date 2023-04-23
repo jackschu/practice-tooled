@@ -1,6 +1,7 @@
 use crate::{
+    armor_reducer::ArmorReducer,
     attack::{BasicAttack, CritAdjuster, CritCalculation},
-    core::stat_at_level,
+    core::{resist_damage, stat_at_level},
     load_champion::{load_champion_stats, ChampionStats},
     target::{Target, VitalityData},
 };
@@ -38,9 +39,18 @@ pub trait Champion {
             self.get_level(),
         );
     }
+
+    fn receive_damage(&mut self, attacker: &dyn Champion, damage: f64) {
+        let armor_reducer: ArmorReducer = (attacker.get_stats(), attacker.get_level()).into();
+        let target_data = self.get_vitality_data();
+        let effective_armor = armor_reducer.get_effective_armor(&target_data);
+        let final_damage = resist_damage(damage, effective_armor);
+        let health = self.get_health_mut();
+        *health = *health - final_damage;
+    }
 }
 
-impl<T: Champion> Target for T {
+impl<T: ?Sized + Champion> Target for T {
     fn get_vitality_data(&self) -> VitalityData {
         return VitalityData {
             base_armor: self.get_base_armor(),
@@ -153,6 +163,17 @@ impl Vi {
     }
     pub fn get_bonus_ad(&self) -> f64 {
         self.stats.bonus_attack_damage
+    }
+
+    pub fn targeted_ability_q(&self, rank: u8, charge_seconds: f64, target: &mut dyn Champion) {
+        const MAX_SCALE: f64 = 1.0;
+        let percent_damage = MAX_SCALE.min(charge_seconds * 0.10 / 0.125) + 1.0;
+        let base_ad = self.get_base_ad();
+        let bonus_ad = self.get_bonus_ad();
+
+        let mut raw_damage = self.q_data.to_damage_amount(rank, base_ad, bonus_ad);
+        raw_damage *= percent_damage;
+        target.receive_damage(self, raw_damage);
     }
 
     pub fn ability_q(&self, rank: u8, charge_seconds: f64) -> f64 {
