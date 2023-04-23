@@ -5,6 +5,7 @@ use serde::Serialize;
 use serde_json;
 use serde_json::Value;
 
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::prelude::*;
 use std::option::Option;
@@ -71,7 +72,7 @@ pub struct ChampionStats {
     pub lethality: f64,
 }
 
-pub trait ChampionStatModifier {
+pub trait ChampionStatModifier: Debug {
     fn modify_champion_stats(&self, stats: &mut ChampionStats);
 }
 

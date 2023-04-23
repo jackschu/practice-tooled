@@ -8,7 +8,7 @@ use crate::{
     load_champion::{ChampionStatModifier, ChampionStats},
 };
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct WikiItemStatDeltas {
     #[serde(rename = "ad")]
     pub attack_damage: Option<f64>,
