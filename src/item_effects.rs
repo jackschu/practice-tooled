@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::champions::vi::Champion;
+use crate::champions::champion::Champion;
 use crate::{load_champion::ChampionStatModifier, load_wiki_item::WikiItemStatDeltas};
 use serde::Deserialize;
 
