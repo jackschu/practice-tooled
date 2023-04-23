@@ -1,4 +1,4 @@
-use crate::{armor_reducer::ArmorReducer, load_champion::ChampionStats, target::Target};
+use crate::{armor_reducer::ArmorReducer, load_champion::ChampionStats, target::VitalityData};
 
 use super::core;
 
@@ -43,7 +43,7 @@ impl BasicAttack {
     }
     pub fn get_damage_to_target(
         &self,
-        target: &Target,
+        target: &VitalityData,
         crit_adjuster: &Option<(&CritAdjuster, CritCalculation)>,
         armor_reducer: Option<&ArmorReducer>,
     ) -> f64 {
@@ -107,7 +107,7 @@ pub enum CritCalculation {
 pub fn get_dps(
     attack_speed: &AttackSpeed,
     attack: &BasicAttack,
-    target: &Target,
+    target: &VitalityData,
     armor_reducer: Option<&ArmorReducer>,
     crit_adjuster: Option<&CritAdjuster>,
 ) -> f64 {
@@ -132,7 +132,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let target = Target {
+            let target = VitalityData {
                 base_armor: 20.0,
                 ..Default::default()
             };

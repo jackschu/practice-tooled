@@ -4,7 +4,7 @@ use practice_tooled::attack;
 mod tests {
     use super::*;
     use attack::*;
-    use practice_tooled::{armor_reducer::ArmorReducer, target::Target};
+    use practice_tooled::{armor_reducer::ArmorReducer, target::VitalityData};
     use rstest::rstest;
 
     #[rstest]
@@ -36,7 +36,7 @@ mod tests {
 
         #[case] expected_damage: u32,
     ) {
-        let target = Target {
+        let target = VitalityData {
             base_armor,
             bonus_armor,
             ..Default::default()

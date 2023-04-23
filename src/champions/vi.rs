@@ -1,17 +1,76 @@
 use crate::{
     attack::{BasicAttack, CritAdjuster, CritCalculation},
+    core::stat_at_level,
     load_champion::{load_champion_stats, ChampionStats},
-    target::Target,
+    target::{Target, VitalityData},
 };
 
 pub trait Champion {
     fn get_stats_mut(&mut self) -> &mut ChampionStats;
+    fn get_stats(&self) -> &ChampionStats;
+    fn get_health_mut(&mut self) -> &mut f64;
+    fn get_current_health(&self) -> f64;
+    fn get_level(&self) -> u8;
+
+    fn get_initial_armor(&self) -> f64;
+    fn get_base_armor(&self) -> f64 {
+        let stats = self.get_stats();
+        return stat_at_level(
+            self.get_initial_armor(),
+            stats.armor_per_level,
+            self.get_level(),
+        );
+    }
+    fn get_bonus_armor(&self) -> f64 {
+        let stats = self.get_stats();
+        return stats.armor - self.get_initial_armor();
+    }
+
+    fn get_max_health(&self) -> f64 {
+        let stats = self.get_stats();
+        return stat_at_level(stats.health, stats.health_per_level, self.get_level());
+    }
+    fn get_magic_resist(&self) -> f64 {
+        let stats = self.get_stats();
+        return stat_at_level(
+            stats.magic_resist,
+            stats.magic_resist_per_level,
+            self.get_level(),
+        );
+    }
+}
+
+impl<T: Champion> Target for T {
+    fn get_vitality_data(&self) -> VitalityData {
+        return VitalityData {
+            base_armor: self.get_base_armor(),
+            bonus_armor: self.get_bonus_armor(),
+            magic_resist: self.get_magic_resist(),
+            max_health: self.get_max_health(),
+            current_health: self.get_current_health(),
+        };
+    }
 }
 
 impl Champion for Vi {
     fn get_stats_mut(&mut self) -> &mut ChampionStats {
         let out = &mut self.stats;
         return out;
+    }
+    fn get_level(&self) -> u8 {
+        self.level
+    }
+    fn get_stats(&self) -> &ChampionStats {
+        &self.stats
+    }
+    fn get_current_health(&self) -> f64 {
+        self.current_health
+    }
+    fn get_health_mut(&mut self) -> &mut f64 {
+        return &mut self.current_health;
+    }
+    fn get_initial_armor(&self) -> f64 {
+        self.initial_armor
     }
 }
 
@@ -22,6 +81,8 @@ pub struct Vi {
     pub e_data: AbiltyDamageInfo,
     pub r_data: AbiltyDamageInfo,
     pub stats: ChampionStats,
+    initial_armor: f64, // base armor before level ups
+    current_health: f64,
 }
 
 #[derive(Default)]
@@ -56,7 +117,10 @@ impl Vi {
 
     // TODO, probably have ability ranks povided at construction time
     pub fn new(level: u8) -> Vi {
-        Vi {
+        let stats = load_champion_stats(Vi::NAME);
+        let health = stats.health;
+        let initial_armor = stats.armor;
+        return Vi {
             level,
             q_data: AbiltyDamageInfo {
                 base_damages: Vi::Q_DAMAGE,
@@ -78,8 +142,10 @@ impl Vi {
                 bonus_ad_ratio: 110.0,
                 ..Default::default()
             },
-            stats: load_champion_stats(Vi::NAME),
-        }
+            stats,
+            initial_armor,
+            current_health: health,
+        };
     }
 
     pub fn get_base_ad(&self) -> f64 {
@@ -112,7 +178,7 @@ impl Vi {
         let base_ad = self.get_base_ad();
         let e_dmg = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
         let attack = BasicAttack::new(e_dmg, 0.0);
-        return attack.get_damage_to_target(&Target::default(), crit_info, None);
+        return attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
     }
 
     pub fn ability_r(&self, rank: u8) -> f64 {
@@ -133,11 +199,11 @@ impl Vi {
         //q , auto , e , (w), ult, auto, e
         let mut out = 0.0;
         out += self.ability_q(ranks[0], Vi::Q_MAX_DAMAGE_CHARGE);
-        out += attack.get_damage_to_target(&Target::default(), crit_info, None);
+        out += attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
         out += self.ability_e(ranks[2], crit_info);
         out += self.ability_w(ranks[1], target_max_health);
         out += self.ability_r(ranks[3]);
-        out += attack.get_damage_to_target(&Target::default(), crit_info, None);
+        out += attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
         out += self.ability_e(ranks[2], crit_info);
         return out;
     }

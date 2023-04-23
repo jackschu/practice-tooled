@@ -3,8 +3,12 @@ use crate::{
     load_champion::{ChampionStatModifier, ChampionStats},
 };
 
+pub trait Target {
+    fn get_vitality_data(&self) -> VitalityData;
+}
+
 #[derive(Default, Clone)]
-pub struct Target {
+pub struct VitalityData {
     pub base_armor: f64,
     pub bonus_armor: f64,
     pub magic_resist: f64,
@@ -27,13 +31,13 @@ pub enum EffectResult {
     },
 }
 
-impl From<(&ChampionStats, u8)> for Target {
-    fn from(tuple: (&ChampionStats, u8)) -> Target {
+impl From<(&ChampionStats, u8)> for VitalityData {
+    fn from(tuple: (&ChampionStats, u8)) -> VitalityData {
         let (stats, level) = tuple;
         let base_armor = stat_at_level(stats.armor, stats.armor_per_level, level);
         let magic_resist = stat_at_level(stats.magic_resist, stats.magic_resist_per_level, level);
         let max_health = stat_at_level(stats.health, stats.health_per_level, level);
-        let target = Target {
+        let target = VitalityData {
             base_armor,
             bonus_armor: 0.0,
             max_health,

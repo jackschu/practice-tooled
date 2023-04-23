@@ -7,7 +7,7 @@ use practice_tooled::{
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
     load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats, open_wiki_item_json},
-    target::Target,
+    target::VitalityData,
 };
 
 fn main() {
@@ -19,7 +19,7 @@ fn main() {
 #[allow(dead_code)]
 fn example_vi_ult_combo() {
     let level = 6;
-    let target: Target = (&load_champion_stats("Leblanc"), level).into();
+    let target: VitalityData = (&load_champion_stats("Leblanc"), level).into();
     let mut vi = Vi::new(level);
 
     let item_names = ["Serrated Dirk", "Long Sword"];
@@ -55,7 +55,7 @@ fn example_vi_ult_combo() {
 #[allow(dead_code)]
 fn example_vi_staring_item() {
     let level = 2;
-    let target: Target = (&load_champion_stats("Leblanc"), level).into();
+    let target: VitalityData = (&load_champion_stats("Leblanc"), level).into();
     let champion = load_champion_stats("Vi");
 
     const NO_ITEM: &str = "NO_ITEM";
@@ -91,7 +91,7 @@ fn example_vi_staring_item() {
 #[allow(dead_code)]
 fn example_basic_attack_dps() {
     // known issue: doesnt accomodate for non-one ad scaling (kalista) or on hit passives
-    let target = Target {
+    let target = VitalityData {
         base_armor: 30f64,
         ..Default::default()
     };

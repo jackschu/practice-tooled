@@ -1,4 +1,4 @@
-use crate::{core::lethality_to_pen, load_champion::ChampionStats, target::Target};
+use crate::{core::lethality_to_pen, load_champion::ChampionStats, target::VitalityData};
 
 #[derive(Default, Clone)]
 pub struct ArmorReducer {
@@ -11,7 +11,7 @@ pub struct ArmorReducer {
 }
 
 impl ArmorReducer {
-    pub fn apply_armor_reduction(&self, target: &mut Target) {
+    pub fn apply_armor_reduction(&self, target: &mut VitalityData) {
         let total_armor = target.base_armor + target.bonus_armor;
         let base_ratio = if total_armor != 0.0 {
             target.base_armor / total_armor
@@ -30,7 +30,7 @@ impl ArmorReducer {
         }
     }
 
-    pub fn get_effective_armor(&self, original_target: &Target) -> f64 {
+    pub fn get_effective_armor(&self, original_target: &VitalityData) -> f64 {
         let mut target = original_target.clone();
         self.apply_armor_reduction(&mut target);
         let mut effective_armor =
@@ -106,7 +106,7 @@ mod tests {
         #[case] reducer: ArmorReducer,
         #[case] expected_armor: f64,
     ) {
-        let target = Target {
+        let target = VitalityData {
             base_armor,
             bonus_armor,
             ..Default::default()
