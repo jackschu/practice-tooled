@@ -1,4 +1,7 @@
-use crate::{core::stat_at_level, load_champion::ChampionStats};
+use crate::{
+    core::stat_at_level,
+    load_champion::{ChampionStatModifier, ChampionStats},
+};
 
 #[derive(Default, Clone)]
 pub struct Target {
@@ -7,6 +10,21 @@ pub struct Target {
     pub magic_resist: f64,
     pub max_health: f64,
     pub current_health: f64,
+}
+
+pub struct EffectData {
+    pub ttl: f64,
+    pub result: EffectResult,
+}
+
+pub enum EffectResult {
+    ThreeHit {
+        on_third_hit: Box<EffectResult>,
+    },
+    Damage,
+    StatChange {
+        stats: Box<dyn ChampionStatModifier>,
+    },
 }
 
 impl From<(&ChampionStats, u8)> for Target {
