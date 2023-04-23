@@ -3,6 +3,7 @@ use practice_tooled::{
     attack::{self},
     champions::Vi,
     core::{lethality_to_pen, resist_damage},
+    item_effects::ConcreteItemEffect,
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
     load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats, open_wiki_item_json},
@@ -26,10 +27,12 @@ fn example_vi_ult_combo() {
 
     for item_name in item_names {
         let item = load_wiki_item_stats(item_name);
-        println!(
-            "Loaded item with effects: {:?}",
-            load_wiki_item_effects(item_name)
-        );
+
+        let concrete_item: Vec<ConcreteItemEffect> = load_wiki_item_effects(item_name)
+            .iter()
+            .map(|v| v.into())
+            .collect();
+        println!("Loaded item with effects: {:?}", concrete_item);
         item.modify_champion_stats(&mut champion_stats);
     }
 
