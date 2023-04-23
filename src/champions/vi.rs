@@ -1,6 +1,6 @@
 use crate::{
     attack::{BasicAttack, CritAdjuster, CritCalculation},
-    load_champion::load_champion_stats,
+    load_champion::{load_champion_stats, ChampionStats},
     target::Target,
 };
 
@@ -10,6 +10,8 @@ pub struct Vi {
     pub w_data: AbiltyDamageInfo,
     pub e_data: AbiltyDamageInfo,
     pub r_data: AbiltyDamageInfo,
+
+    pub stats: ChampionStats,
 }
 
 #[derive(Default)]
@@ -66,64 +68,67 @@ impl Vi {
                 bonus_ad_ratio: 110.0,
                 ..Default::default()
             },
+            stats: load_champion_stats(Vi::NAME),
         }
     }
 
     pub fn get_base_ad(&self) -> f64 {
         BasicAttack::from((&load_champion_stats(Vi::NAME), self.level)).base_attack_damage
     }
+    pub fn get_bonus_ad(&self) -> f64 {
+        self.stats.bonus_attack_damage
+    }
 
-    pub fn ability_q(&self, rank: u8, bonus_ad: f64, charge_seconds: f64) -> f64 {
+    pub fn ability_q(&self, rank: u8, charge_seconds: f64) -> f64 {
         const MAX_SCALE: f64 = 1.0;
         let percent_damage = MAX_SCALE.min(charge_seconds * 0.10 / 0.125) + 1.0;
         let base_ad = self.get_base_ad();
+        let bonus_ad = self.get_bonus_ad();
 
         let mut out = self.q_data.to_damage_amount(rank, base_ad, bonus_ad);
         out *= percent_damage;
         return out;
     }
 
-    pub fn ability_w(&self, rank: u8, bonus_ad: f64, target_max_health: f64) -> f64 {
+    pub fn ability_w(&self, rank: u8, target_max_health: f64) -> f64 {
+        let bonus_ad = self.get_bonus_ad();
         let percent_health_dmg = 0.01 * self.w_data.target_max_health_ratio[rank as usize]
             + 0.01 * self.w_data.bonus_ad_ratio * bonus_ad;
         return percent_health_dmg * target_max_health;
     }
 
-    pub fn ability_e(
-        &self,
-        rank: u8,
-        bonus_ad: f64,
-        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
-    ) -> f64 {
+    pub fn ability_e(&self, rank: u8, crit_info: &Option<(&CritAdjuster, CritCalculation)>) -> f64 {
+        let bonus_ad = self.get_bonus_ad();
         let base_ad = self.get_base_ad();
         let e_dmg = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
         let attack = BasicAttack::new(e_dmg, 0.0);
         return attack.get_damage_to_target(&Target::default(), crit_info, None);
     }
 
-    pub fn ability_r(&self, rank: u8, bonus_ad: f64) -> f64 {
+    pub fn ability_r(&self, rank: u8) -> f64 {
         let base_ad = self.get_base_ad();
+        let bonus_ad = self.get_bonus_ad();
         return self.r_data.to_damage_amount(rank, base_ad, bonus_ad);
     }
 
     pub fn get_ult_combo_damage(
         &self,
         ranks: [u8; 4],
-        bonus_ad: f64,
         target_max_health: f64,
         crit_info: &Option<(&CritAdjuster, CritCalculation)>,
     ) -> f64 {
         let base_ad = self.get_base_ad();
+        let bonus_ad = self.get_bonus_ad();
         let attack = BasicAttack::new(base_ad, bonus_ad);
         //q , auto , e , (w), ult, auto, e
         let mut out = 0.0;
-        out += self.ability_q(ranks[0], bonus_ad, Vi::Q_MAX_DAMAGE_CHARGE);
+        out += self.ability_q(ranks[0], Vi::Q_MAX_DAMAGE_CHARGE);
         out += attack.get_damage_to_target(&Target::default(), crit_info, None);
-        out += self.ability_e(ranks[2], bonus_ad, crit_info);
-        out += self.ability_w(ranks[1], bonus_ad, target_max_health);
-        out += self.ability_r(ranks[3], bonus_ad);
+        out += self.ability_e(ranks[2], crit_info);
+        out += self.ability_w(ranks[1], target_max_health);
+        out += self.ability_r(ranks[3]);
         out += attack.get_damage_to_target(&Target::default(), crit_info, None);
-        out += self.ability_e(ranks[2], bonus_ad, crit_info);
+        out += self.ability_e(ranks[2], crit_info);
         return out;
     }
 }
@@ -137,25 +142,20 @@ mod tests {
     #[rstest]
     fn test_abilty_q() {
         let mut vi = Vi::new(1);
-        assert_eq!(45, vi.ability_q(0, 0.0, 0.0).round() as u32);
-        assert_eq!(
-            90,
-            vi.ability_q(0, 0.0, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32
-        );
+        assert_eq!(45, vi.ability_q(0, 0.0).round() as u32);
+        assert_eq!(90, vi.ability_q(0, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32);
         vi.level = 3;
-        assert_eq!(
-            188,
-            vi.ability_q(1, 30.0, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32
-        );
+        vi.stats.bonus_attack_damage += 30.0;
+        assert_eq!(188, vi.ability_q(1, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32);
     }
 
     #[rstest]
     fn test_full_combo() {
-        let vi = Vi::new(6);
+        let mut vi = Vi::new(6);
+        vi.stats.bonus_attack_damage += 40.0;
         assert_eq!(
             965,
-            vi.get_ult_combo_damage([0, 0, 2, 0], 40.0, 1000.0, &None)
-                .round() as u32
+            vi.get_ult_combo_damage([0, 0, 2, 0], 1000.0, &None).round() as u32
         );
     }
 }

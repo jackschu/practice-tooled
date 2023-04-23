@@ -20,7 +20,7 @@ fn main() {
 fn example_vi_ult_combo() {
     let level = 6;
     let target: Target = (&load_champion_stats("Leblanc"), level).into();
-    let mut champion_stats = load_champion_stats("Vi");
+    let mut vi = Vi::new(level);
 
     let item_names = ["Serrated Dirk", "Long Sword"];
     let lethality = 10.0; // from dirk passive
@@ -33,20 +33,13 @@ fn example_vi_ult_combo() {
             .map(|v| v.into())
             .collect();
         println!("Loaded item with effects: {:?}", concrete_item);
-        item.modify_champion_stats(&mut champion_stats);
+        item.modify_champion_stats(&mut vi.stats);
     }
 
-    let vi = Vi::new(level);
-
-    let combo_raw_damage = vi.get_ult_combo_damage(
-        [0, 0, 2, 0],
-        champion_stats.bonus_attack_damage,
-        target.max_health,
-        &None,
-    );
+    let combo_raw_damage = vi.get_ult_combo_damage([0, 0, 2, 0], target.max_health, &None);
     // ignores armor reduction from W so far
 
-    let mut armor_reducer: ArmorReducer = (&champion_stats, level).into();
+    let mut armor_reducer: ArmorReducer = (&vi.stats, level).into();
     armor_reducer.flat_armor_pen += lethality_to_pen(lethality, level);
     let effective_armor = armor_reducer.get_effective_armor(&target);
     let final_damage = resist_damage(combo_raw_damage, effective_armor);
