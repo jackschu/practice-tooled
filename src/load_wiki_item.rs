@@ -3,7 +3,10 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::{collections::HashMap, fs::File, io::Read};
 
-use crate::load_champion::{ChampionStatModifier, ChampionStats};
+use crate::{
+    item_effects::UnknownItemEffect,
+    load_champion::{ChampionStatModifier, ChampionStats},
+};
 
 #[derive(Deserialize, Default)]
 pub struct WikiItemStatDeltas {
@@ -101,14 +104,7 @@ pub fn load_wiki_item_stats(name: &str) -> WikiItemStatDeltas {
     };
 }
 
-#[derive(Deserialize, Debug)]
-pub struct WikiItemEffect {
-    pub name: String,
-    pub description: String,
-    pub unique: bool,
-}
-
-pub fn load_wiki_item_effects(name: &str) -> Vec<WikiItemEffect> {
+pub fn load_wiki_item_effects(name: &str) -> Vec<UnknownItemEffect> {
     let all_items = open_wiki_item_json();
     let maybe_effects = all_items.get(name).unwrap().get("effects");
     if let None = maybe_effects {

@@ -2,6 +2,7 @@ pub mod armor_reducer;
 pub mod attack;
 pub mod champions;
 pub mod core;
+pub mod item_effects;
 pub mod load_champion;
 pub mod load_dd_item;
 pub mod load_wiki_item;
