@@ -111,7 +111,7 @@ impl Vi {
         self.stats.bonus_attack_damage
     }
 
-    pub fn targeted_ability_q(&self, rank: u8, charge_seconds: f64, target: &mut dyn Champion) {
+    pub fn ability_q(&self, rank: u8, target: &mut dyn Champion, charge_seconds: f64) {
         const MAX_SCALE: f64 = 1.0;
         let percent_damage = MAX_SCALE.min(charge_seconds * 0.10 / 0.125) + 1.0;
         let base_ad = self.get_base_ad();
@@ -122,57 +122,62 @@ impl Vi {
         target.receive_damage(self, raw_damage);
     }
 
-    pub fn ability_q(&self, rank: u8, charge_seconds: f64) -> f64 {
-        const MAX_SCALE: f64 = 1.0;
-        let percent_damage = MAX_SCALE.min(charge_seconds * 0.10 / 0.125) + 1.0;
-        let base_ad = self.get_base_ad();
-        let bonus_ad = self.get_bonus_ad();
-
-        let mut out = self.q_data.to_damage_amount(rank, base_ad, bonus_ad);
-        out *= percent_damage;
-        return out;
-    }
-
-    pub fn ability_w(&self, rank: u8, target_max_health: f64) -> f64 {
+    pub fn ability_w(&self, rank: u8, target: &mut dyn Champion) {
         let bonus_ad = self.get_bonus_ad();
         let percent_health_dmg = 0.01 * self.w_data.target_max_health_ratio[rank as usize]
             + 0.01 * self.w_data.bonus_ad_ratio * bonus_ad;
-        return percent_health_dmg * target_max_health;
+        let raw_damage = percent_health_dmg * target.get_max_health();
+        target.receive_damage(self, raw_damage);
     }
 
-    pub fn ability_e(&self, rank: u8, crit_info: &Option<(&CritAdjuster, CritCalculation)>) -> f64 {
+    pub fn ability_e(
+        &self,
+        rank: u8,
+        target: &mut dyn Champion,
+        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
+    ) {
         let bonus_ad = self.get_bonus_ad();
         let base_ad = self.get_base_ad();
         let e_dmg = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
         let attack = BasicAttack::new(e_dmg, 0.0);
-        return attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
+        let raw_damage = attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
+        target.receive_damage(self, raw_damage)
     }
 
-    pub fn ability_r(&self, rank: u8) -> f64 {
+    pub fn ability_r(&self, rank: u8, target: &mut dyn Champion) {
         let base_ad = self.get_base_ad();
         let bonus_ad = self.get_bonus_ad();
-        return self.r_data.to_damage_amount(rank, base_ad, bonus_ad);
+        let raw_damage = self.r_data.to_damage_amount(rank, base_ad, bonus_ad);
+
+        target.receive_damage(self, raw_damage)
     }
 
-    pub fn get_ult_combo_damage(
+    pub fn auto_attack(
         &self,
-        ranks: [u8; 4],
-        target_max_health: f64,
+        target: &mut dyn Champion,
         crit_info: &Option<(&CritAdjuster, CritCalculation)>,
-    ) -> f64 {
+    ) {
         let base_ad = self.get_base_ad();
         let bonus_ad = self.get_bonus_ad();
         let attack = BasicAttack::new(base_ad, bonus_ad);
+
+        let raw_damage = attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
+        target.receive_damage(self, raw_damage)
+    }
+    pub fn ult_combo(
+        &self,
+        ranks: [u8; 4],
+        target: &mut dyn Champion,
+        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
+    ) {
         //q , auto , e , (w), ult, auto, e
-        let mut out = 0.0;
-        out += self.ability_q(ranks[0], Vi::Q_MAX_DAMAGE_CHARGE);
-        out += attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
-        out += self.ability_e(ranks[2], crit_info);
-        out += self.ability_w(ranks[1], target_max_health);
-        out += self.ability_r(ranks[3]);
-        out += attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
-        out += self.ability_e(ranks[2], crit_info);
-        return out;
+        self.ability_q(ranks[0], target, Vi::Q_MAX_DAMAGE_CHARGE);
+        self.auto_attack(target, crit_info);
+        self.ability_e(ranks[2], target, crit_info);
+        self.ability_w(ranks[1], target);
+        self.ability_r(ranks[3], target);
+        self.auto_attack(target, crit_info);
+        self.ability_e(ranks[2], target, crit_info);
     }
 }
 
@@ -188,19 +193,19 @@ mod tests {
     fn test_abilty_q() {
         let mut vi = Vi::new(1);
 
-        let mut target = TargetDummy::new();
-        vi.targeted_ability_q(0, 0.0, &mut target);
+        let target = &mut TargetDummy::new();
+        vi.ability_q(0, target, 0.0);
         assert_eq!(45, target.get_missing_health().round() as u32);
 
         target.full_heal();
-        vi.targeted_ability_q(0, Vi::Q_MAX_DAMAGE_CHARGE, &mut target);
+        vi.ability_q(0, target, Vi::Q_MAX_DAMAGE_CHARGE);
         assert_eq!(90, target.get_missing_health().round() as u32);
 
         vi.level = 3;
         vi.stats.bonus_attack_damage += 30.0;
 
         target.full_heal();
-        vi.targeted_ability_q(1, Vi::Q_MAX_DAMAGE_CHARGE, &mut target);
+        vi.ability_q(1, target, Vi::Q_MAX_DAMAGE_CHARGE);
         assert_eq!(188, target.get_missing_health().round() as u32);
     }
 
@@ -208,9 +213,8 @@ mod tests {
     fn test_full_combo() {
         let mut vi = Vi::new(6);
         vi.stats.bonus_attack_damage += 40.0;
-        assert_eq!(
-            965,
-            vi.get_ult_combo_damage([0, 0, 2, 0], 1000.0, &None).round() as u32
-        );
+        let target = &mut TargetDummy::new();
+        vi.ult_combo([0, 0, 2, 0], target, &None);
+        assert_eq!(965, target.get_missing_health().round() as u32);
     }
 }
