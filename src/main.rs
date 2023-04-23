@@ -11,9 +11,10 @@ use practice_tooled::{
 fn main() {
     open_wiki_item_json();
     load_wiki_item_stats("Long Sword".to_string());
-    for _ in 1..500 {
-        example_vi_ult_combo();
-    }
+    example_vi_ult_combo();
+    // for _ in 1..1_000_000 {
+    //     example_vi_ult_combo();
+    // }
 }
 
 #[allow(dead_code)]
