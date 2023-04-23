@@ -10,7 +10,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::option::Option;
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct ChampionStats {
     #[serde(rename = "hp")]
     pub health: f64,

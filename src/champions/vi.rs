@@ -178,6 +178,8 @@ impl Vi {
 
 #[cfg(test)]
 mod tests {
+    use crate::champions::target_dummy::TargetDummy;
+
     use super::*;
     use rstest::rstest;
 
@@ -185,11 +187,21 @@ mod tests {
     #[rstest]
     fn test_abilty_q() {
         let mut vi = Vi::new(1);
-        assert_eq!(45, vi.ability_q(0, 0.0).round() as u32);
-        assert_eq!(90, vi.ability_q(0, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32);
+
+        let mut target = TargetDummy::new();
+        vi.targeted_ability_q(0, 0.0, &mut target);
+        assert_eq!(45, target.get_missing_health().round() as u32);
+
+        target.full_heal();
+        vi.targeted_ability_q(0, Vi::Q_MAX_DAMAGE_CHARGE, &mut target);
+        assert_eq!(90, target.get_missing_health().round() as u32);
+
         vi.level = 3;
         vi.stats.bonus_attack_damage += 30.0;
-        assert_eq!(188, vi.ability_q(1, Vi::Q_MAX_DAMAGE_CHARGE).round() as u32);
+
+        target.full_heal();
+        vi.targeted_ability_q(1, Vi::Q_MAX_DAMAGE_CHARGE, &mut target);
+        assert_eq!(188, target.get_missing_health().round() as u32);
     }
 
     #[rstest]

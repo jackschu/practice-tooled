@@ -30,6 +30,11 @@ pub trait Champion {
         let stats = self.get_stats();
         return stat_at_level(stats.health, stats.health_per_level, self.get_level());
     }
+
+    fn get_missing_health(&self) -> f64 {
+        self.get_max_health() - self.get_current_health()
+    }
+
     fn get_magic_resist(&self) -> f64 {
         let stats = self.get_stats();
         return stat_at_level(
