@@ -67,7 +67,7 @@ impl Vi {
         }
     }
 
-    pub fn get_name_closures<'b>(&'b mut self) -> NamedClosures<'b> {
+    pub fn get_name_closures(&mut self) -> NamedClosures {
         let mut map: HashMap<String, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>> =
             HashMap::new();
         map.entry("q".to_string())

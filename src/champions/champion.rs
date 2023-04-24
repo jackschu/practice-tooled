@@ -8,12 +8,12 @@ use crate::{
     target::{Target, VitalityData},
 };
 
-pub struct Champion<'data> {
+pub struct Champion {
     pub stats: ChampionStats,
     pub level: u8,
     initial_armor: f64, // base armor before level ups
     pub current_health: f64,
-    pub abilities: NamedClosures<'data>,
+    pub abilities: NamedClosures,
     pub crit_info: Option<(CritAdjuster, CritCalculation)>,
 }
 
@@ -31,12 +31,12 @@ impl CastingData {
         }
     }
 }
-pub struct NamedClosures<'a> {
-    pub data: HashMap<String, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> () + 'a>>,
+pub struct NamedClosures {
+    pub data: HashMap<String, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>>,
 }
 
-impl<'data> Champion<'data> {
-    pub fn new_dummy_with_resist(armor: f64, magic_resist: f64) -> Champion<'data> {
+impl Champion {
+    pub fn new_dummy_with_resist(armor: f64, magic_resist: f64) -> Champion {
         let health = 1000.0;
         let stats = ChampionStats {
             health,
@@ -57,11 +57,11 @@ impl<'data> Champion<'data> {
         };
     }
 
-    pub fn new_dummy() -> Champion<'data> {
+    pub fn new_dummy() -> Champion {
         Champion::new_dummy_with_resist(0.0, 0.0)
     }
 
-    pub fn new(level: u8, name: String, abilities: NamedClosures<'data>) -> Champion<'data> {
+    pub fn new(level: u8, name: String, abilities: NamedClosures) -> Champion {
         let stats = load_champion_stats(name);
         let health = stat_at_level(stats.health, stats.health_per_level, level);
         let initial_armor = stats.armor;
@@ -131,7 +131,7 @@ impl<'data> Champion<'data> {
     }
 }
 
-impl<'data> Target for Champion<'data> {
+impl Target for Champion {
     fn get_vitality_data(&self) -> VitalityData {
         return VitalityData {
             base_armor: self.get_base_armor(),
