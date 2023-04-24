@@ -8,6 +8,14 @@ use crate::{
     target::{Target, VitalityData},
 };
 
+#[derive(Eq, Hash, PartialEq)]
+pub enum ChampionAbilites {
+    Q,
+    W,
+    E,
+    R,
+    AUTO,
+}
 pub struct Champion {
     pub stats: ChampionStats,
     pub level: u8,
@@ -32,7 +40,7 @@ impl CastingData {
     }
 }
 pub struct NamedClosures {
-    pub data: HashMap<String, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>>,
+    pub data: HashMap<ChampionAbilites, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>>,
 }
 
 impl Champion {
@@ -75,14 +83,23 @@ impl Champion {
         };
     }
 
-    pub fn execute_combo(&self, combo: Vec<(String, CastingData)>, target: &mut Champion) {
+    pub fn execute_combo(
+        &self,
+        combo: Vec<(ChampionAbilites, CastingData)>,
+        target: &mut Champion,
+    ) {
         for (name, data) in combo {
-            self.execute_ability(name.as_str(), target, &data)
+            self.execute_ability(name, target, &data)
         }
     }
 
-    pub fn execute_ability(&self, name: &str, target: &mut Champion, casting_data: &CastingData) {
-        let func = self.abilities.data.get(&name.to_string()).unwrap();
+    pub fn execute_ability(
+        &self,
+        name: ChampionAbilites,
+        target: &mut Champion,
+        casting_data: &CastingData,
+    ) {
+        let func = self.abilities.data.get(&name).unwrap();
         func(target, self, casting_data);
     }
 

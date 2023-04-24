@@ -4,6 +4,7 @@ use practice_tooled::{
     attack::{self},
     champions::{
         champion::{Champion, NamedClosures},
+        leblanc::Leblanc,
         Vi,
     },
     item_effects::{ChampionApplyable, ConcreteItemEffect},
@@ -28,12 +29,12 @@ fn example_vi_ult_combo() {
     let empty_closures = NamedClosures {
         data: HashMap::new(),
     };
-    let mut leblanc = Champion::new(level, "Leblanc".to_string(), empty_closures);
+    let mut leblanc = Champion::new(level, Leblanc::NAME.to_string(), empty_closures);
 
     let mut vi_data = Vi::new();
 
     let vi_closures = vi_data.get_name_closures();
-    let mut vi = Champion::new(level, "Vi".to_string(), vi_closures);
+    let mut vi = Champion::new(level, Vi::NAME.to_string(), vi_closures);
 
     let item_names = ["Serrated Dirk", "Long Sword", "Last Whisper"];
     for item_name in item_names {
@@ -62,8 +63,8 @@ fn example_vi_ult_combo() {
 #[allow(dead_code)]
 fn example_vi_staring_item() {
     let level = 2;
-    let target: VitalityData = (&load_champion_stats("Leblanc".to_string()), level).into();
-    let champion = load_champion_stats("Vi".to_string());
+    let target: VitalityData = (&load_champion_stats(Leblanc::NAME.to_string()), level).into();
+    let champion = load_champion_stats(Vi::NAME.to_string());
 
     const NO_ITEM: &str = "NO_ITEM";
     let item_names = [

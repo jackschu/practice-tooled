@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{attack::BasicAttack, target::VitalityData};
 
-use super::champion::{CastingData, Champion, NamedClosures};
+use super::champion::{CastingData, Champion, ChampionAbilites, NamedClosures};
 
 pub struct Vi {
     q_data: AbiltyDamageInfo,
@@ -28,7 +28,7 @@ impl AbiltyDamageInfo {
 }
 
 impl Vi {
-    const NAME: &str = "Vi";
+    pub const NAME: &str = "Vi";
 
     // as of 13.7
     #[allow(dead_code)]
@@ -68,18 +68,20 @@ impl Vi {
     }
 
     pub fn get_name_closures(&mut self) -> NamedClosures {
-        let mut map: HashMap<String, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>> =
-            HashMap::new();
-        map.entry("q".to_string())
+        let mut map: HashMap<
+            ChampionAbilites,
+            Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>,
+        > = HashMap::new();
+        map.entry(ChampionAbilites::Q)
             .or_insert(Box::new(Vi::ability_q(self.q_data)));
-        map.entry("w".to_string())
+        map.entry(ChampionAbilites::W)
             .or_insert(Box::new(Vi::ability_w(self.w_data)));
-        map.entry("e".to_string())
+        map.entry(ChampionAbilites::E)
             .or_insert(Box::new(Vi::ability_e(self.e_data)));
-        map.entry("r".to_string())
+        map.entry(ChampionAbilites::R)
             .or_insert(Box::new(Vi::ability_r(self.r_data)));
 
-        map.entry("auto".to_string())
+        map.entry(ChampionAbilites::AUTO)
             .or_insert(Box::new(Vi::auto_attack()));
 
         return NamedClosures { data: map };
@@ -150,42 +152,42 @@ impl Vi {
         };
     }
 
-    pub fn ult_combo(ranks: [u8; 4]) -> Vec<(String, CastingData)> {
+    pub fn ult_combo(ranks: [u8; 4]) -> Vec<(ChampionAbilites, CastingData)> {
         //q , auto , e , (w), ult, auto, e
         let mut out = Vec::new();
 
         out.push((
-            "q".to_string(),
+            ChampionAbilites::Q,
             CastingData {
                 rank: ranks[0],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
             },
         ));
-        out.push(("auto".to_string(), CastingData::new(0)));
+        out.push((ChampionAbilites::AUTO, CastingData::new(0)));
         out.push((
-            "e".to_string(),
+            ChampionAbilites::E,
             CastingData {
                 rank: ranks[2],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
             },
         ));
         out.push((
-            "w".to_string(),
+            ChampionAbilites::W,
             CastingData {
                 rank: ranks[1],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
             },
         ));
         out.push((
-            "r".to_string(),
+            ChampionAbilites::R,
             CastingData {
                 rank: ranks[1],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
             },
         ));
-        out.push(("auto".to_string(), CastingData::new(0)));
+        out.push((ChampionAbilites::AUTO, CastingData::new(0)));
         out.push((
-            "e".to_string(),
+            ChampionAbilites::E,
             CastingData {
                 rank: ranks[2],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
@@ -206,12 +208,12 @@ mod tests {
     fn test_abilty_q() {
         let mut vi_data = Vi::new();
         let vi_closures = vi_data.get_name_closures();
-        let mut vi = Champion::new(1, "Vi".to_string(), vi_closures);
+        let mut vi = Champion::new(1, Vi::NAME.to_string(), vi_closures);
 
         let target = &mut Champion::new_dummy();
 
         vi.execute_ability(
-            "q",
+            ChampionAbilites::Q,
             target,
             &CastingData {
                 rank: 0,
@@ -222,7 +224,7 @@ mod tests {
 
         target.full_heal();
         vi.execute_ability(
-            "q",
+            ChampionAbilites::Q,
             target,
             &CastingData {
                 rank: 0,
@@ -237,7 +239,7 @@ mod tests {
         target.full_heal();
 
         vi.execute_ability(
-            "q",
+            ChampionAbilites::Q,
             target,
             &CastingData {
                 rank: 1,
@@ -253,7 +255,7 @@ mod tests {
 
         let mut vi_data = Vi::new();
         let vi_closures = vi_data.get_name_closures();
-        let mut vi = Champion::new(level, "Vi".to_string(), vi_closures);
+        let mut vi = Champion::new(level, Vi::NAME.to_string(), vi_closures);
 
         vi.stats.bonus_attack_damage += 40.0;
         let target = &mut Champion::new_dummy();

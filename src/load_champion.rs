@@ -114,7 +114,7 @@ pub fn load_champion_stats(champion_name: String) -> ChampionStats {
 
 #[cfg(test)]
 mod tests {
-    use crate::attack::BasicAttack;
+    use crate::{attack::BasicAttack, champions::Vi};
 
     use super::*;
     use rstest::rstest;
@@ -127,7 +127,7 @@ mod tests {
 
     #[rstest]
     fn test_load_champion_basic_attack() {
-        let stats = load_champion_stats("Vi".to_string());
+        let stats = load_champion_stats(Vi::NAME.to_string());
         let attack: BasicAttack = (&stats, 5).into();
         assert_eq!(72.0, attack.base_attack_damage.round()); // values from game, patch 13.6
     }
