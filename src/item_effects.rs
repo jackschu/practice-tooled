@@ -12,7 +12,7 @@ pub struct UnknownItemEffect {
 }
 
 pub trait ChampionApplyable {
-    fn apply_to_champ(&self, champion: &mut dyn Champion);
+    fn apply_to_champ(&self, champion: &mut Champion);
 }
 
 #[derive(Debug)]
@@ -33,7 +33,7 @@ pub enum ConcreteItemEffect {
 }
 
 impl ChampionApplyable for ConcreteItemEffect {
-    fn apply_to_champ(&self, champion: &mut dyn Champion) {
+    fn apply_to_champ(&self, champion: &mut Champion) {
         match &*self {
             ConcreteItemEffect::StatItemEffect(v) => v.apply_to_champ(champion),
             ConcreteItemEffect::UnhandledItemEffect(v) => v.apply_to_champ(champion),
@@ -41,13 +41,13 @@ impl ChampionApplyable for ConcreteItemEffect {
     }
 }
 impl ChampionApplyable for StatItemEffect {
-    fn apply_to_champ(&self, champion: &mut dyn Champion) {
-        self.stats.modify_champion_stats(champion.get_stats_mut())
+    fn apply_to_champ(&self, champion: &mut Champion) {
+        self.stats.modify_champion_stats(&mut champion.stats)
     }
 }
 
 impl ChampionApplyable for UnhandledItemEffect {
-    fn apply_to_champ(&self, _champion: &mut dyn Champion) {
+    fn apply_to_champ(&self, _champion: &mut Champion) {
         println!(
             "Warning, unhandled item effect (name: {}) (description: {}",
             self.name, self.description

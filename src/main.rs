@@ -1,6 +1,11 @@
+use std::collections::HashMap;
+
 use practice_tooled::{
     attack::{self},
-    champions::{champion::Champion, leblanc::Leblanc, Vi},
+    champions::{
+        champion::{Champion, NamedClosures},
+        Vi,
+    },
     item_effects::{ChampionApplyable, ConcreteItemEffect},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
@@ -20,8 +25,15 @@ fn main() {
 #[allow(dead_code)]
 fn example_vi_ult_combo() {
     let level = 6;
-    let mut vi = Vi::new(level);
-    let mut leblanc = Leblanc::new(level);
+    let empty_closures = NamedClosures {
+        data: HashMap::new(),
+    };
+    let mut leblanc = Champion::new(level, "Leblanc".to_string(), empty_closures);
+
+    let mut vi_data = Vi::new();
+
+    let vi_closures = vi_data.get_name_closures();
+    let mut vi = Champion::new(level, "Vi".to_string(), vi_closures);
 
     let item_names = ["Serrated Dirk", "Long Sword", "Last Whisper"];
     for item_name in item_names {
@@ -38,8 +50,7 @@ fn example_vi_ult_combo() {
         item.modify_champion_stats(&mut vi.stats);
     }
 
-    vi.ult_combo([0, 0, 2, 0], &mut leblanc, &None);
-    //    ignores armor reduction from W so far
+    vi.execute_combo(Vi::ult_combo([0, 0, 2, 0]), &mut leblanc);
 
     println!(
         "Full combo deals {:.2} out of {:.2} hp against a target with {} armor",
@@ -48,7 +59,6 @@ fn example_vi_ult_combo() {
         leblanc.get_base_armor() + leblanc.get_bonus_armor(),
     );
 }
-
 #[allow(dead_code)]
 fn example_vi_staring_item() {
     let level = 2;

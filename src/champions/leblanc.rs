@@ -3,30 +3,6 @@ use crate::{
     load_champion::{load_champion_stats, ChampionStats},
 };
 
-use super::champion::Champion;
-
-impl Champion for Leblanc {
-    fn get_stats_mut(&mut self) -> &mut ChampionStats {
-        let out = &mut self.stats;
-        return out;
-    }
-    fn get_level(&self) -> u8 {
-        self.level
-    }
-    fn get_stats(&self) -> &ChampionStats {
-        &self.stats
-    }
-    fn get_current_health(&self) -> f64 {
-        self.current_health
-    }
-    fn get_current_health_mut(&mut self) -> &mut f64 {
-        return &mut self.current_health;
-    }
-    fn get_initial_armor(&self) -> f64 {
-        self.initial_armor
-    }
-}
-
 pub struct Leblanc {
     pub level: u8,
     pub stats: ChampionStats,

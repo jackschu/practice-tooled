@@ -1,47 +1,17 @@
-use crate::{
-    attack::{BasicAttack, CritAdjuster, CritCalculation},
-    core::stat_at_level,
-    load_champion::{load_champion_stats, ChampionStats},
-    target::VitalityData,
-};
+use std::collections::HashMap;
 
-use super::champion::Champion;
+use crate::{attack::BasicAttack, target::VitalityData};
 
-impl Champion for Vi {
-    fn get_stats_mut(&mut self) -> &mut ChampionStats {
-        let out = &mut self.stats;
-        return out;
-    }
-    fn get_level(&self) -> u8 {
-        self.level
-    }
-    fn get_stats(&self) -> &ChampionStats {
-        &self.stats
-    }
-
-    fn get_current_health(&self) -> f64 {
-        self.current_health
-    }
-    fn get_current_health_mut(&mut self) -> &mut f64 {
-        return &mut self.current_health;
-    }
-    fn get_initial_armor(&self) -> f64 {
-        self.initial_armor
-    }
-}
+use super::champion::{CastingData, Champion, NamedClosures};
 
 pub struct Vi {
-    pub level: u8,
-    pub q_data: AbiltyDamageInfo,
-    pub w_data: AbiltyDamageInfo,
-    pub e_data: AbiltyDamageInfo,
-    pub r_data: AbiltyDamageInfo,
-    pub stats: ChampionStats,
-    initial_armor: f64, // base armor before level ups
-    current_health: f64,
+    q_data: AbiltyDamageInfo,
+    w_data: AbiltyDamageInfo,
+    e_data: AbiltyDamageInfo,
+    r_data: AbiltyDamageInfo,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct AbiltyDamageInfo {
     pub base_damages: [f64; 5],
     pub target_max_health_ratio: [f64; 5], // stored as percent (0-100)
@@ -71,18 +41,8 @@ impl Vi {
     const E_DAMAGE: [f64; 5] = [0.0, 15.0, 30.0, 45.0, 60.0];
     const R_DAMAGE: [f64; 5] = [150.0, 325.0, 350.0, 0.0, 0.0];
 
-    // TODO, probably have ability ranks povided at construction time
-    pub fn new(level: u8) -> Vi {
-        let stats = load_champion_stats(Vi::NAME.to_string());
-        let health = stat_at_level(stats.health, stats.health_per_level, level);
-        let initial_armor = stats.armor;
-        return Vi {
-            level,
-            q_data: AbiltyDamageInfo {
-                base_damages: Vi::Q_DAMAGE,
-                bonus_ad_ratio: 80.0,
-                ..Default::default()
-            },
+    pub fn new() -> Vi {
+        Vi {
             w_data: AbiltyDamageInfo {
                 bonus_ad_ratio: 1.0 / 35.0, // percent ad
                 target_max_health_ratio: Vi::W_HP_SCALING,
@@ -98,124 +58,206 @@ impl Vi {
                 bonus_ad_ratio: 110.0,
                 ..Default::default()
             },
-            stats,
-            initial_armor,
-            current_health: health,
+
+            q_data: AbiltyDamageInfo {
+                base_damages: Vi::Q_DAMAGE,
+                bonus_ad_ratio: 80.0,
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn get_name_closures<'b>(&'b mut self) -> NamedClosures<'b> {
+        let mut map: HashMap<String, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>> =
+            HashMap::new();
+        map.entry("q".to_string())
+            .or_insert(Box::new(Vi::ability_q(self.q_data)));
+        map.entry("w".to_string())
+            .or_insert(Box::new(Vi::ability_w(self.w_data)));
+        map.entry("e".to_string())
+            .or_insert(Box::new(Vi::ability_e(self.e_data)));
+        map.entry("r".to_string())
+            .or_insert(Box::new(Vi::ability_r(self.r_data)));
+
+        map.entry("auto".to_string())
+            .or_insert(Box::new(Vi::auto_attack()));
+
+        return NamedClosures { data: map };
+    }
+
+    pub fn ability_q(q_data: AbiltyDamageInfo) -> impl Fn(&mut Champion, &Champion, &CastingData) {
+        return move |target: &mut Champion, attacker: &Champion, casting_data: &CastingData| {
+            const MAX_SCALE: f64 = 1.0;
+            let rank = casting_data.rank;
+            let percent_damage = MAX_SCALE.min(casting_data.charge * 0.10 / 0.125) + 1.0;
+            let base_ad = attacker.get_base_ad();
+            let bonus_ad = attacker.get_bonus_ad();
+
+            let mut raw_damage = q_data.to_damage_amount(rank, base_ad, bonus_ad);
+            raw_damage *= percent_damage;
+            target.receive_damage(attacker, raw_damage);
         };
     }
 
-    pub fn get_base_ad(&self) -> f64 {
-        BasicAttack::from((&self.stats, self.level)).base_attack_damage
+    // TODO, probably have ability ranks povided at construction time
+
+    pub fn ability_w(w_data: AbiltyDamageInfo) -> impl Fn(&mut Champion, &Champion, &CastingData) {
+        return move |target: &mut Champion, attacker: &Champion, casting_data: &CastingData| {
+            let bonus_ad = attacker.get_bonus_ad();
+            let rank = casting_data.rank;
+            let percent_health_dmg = 0.01 * w_data.target_max_health_ratio[rank as usize]
+                + 0.01 * w_data.bonus_ad_ratio * bonus_ad;
+            let raw_damage = percent_health_dmg * target.get_max_health();
+            target.receive_damage(attacker, raw_damage);
+        };
     }
 
-    pub fn get_bonus_ad(&self) -> f64 {
-        self.stats.bonus_attack_damage
+    pub fn ability_e(e_data: AbiltyDamageInfo) -> impl Fn(&mut Champion, &Champion, &CastingData) {
+        return move |target: &mut Champion, attacker: &Champion, casting_data: &CastingData| {
+            let rank = casting_data.rank;
+            let bonus_ad = attacker.get_bonus_ad();
+            let base_ad = attacker.get_base_ad();
+            let e_dmg = e_data.to_damage_amount(rank, base_ad, bonus_ad);
+            let attack = BasicAttack::new(e_dmg, 0.0);
+            let raw_damage =
+                attack.get_damage_to_target(&VitalityData::default(), &attacker.crit_info, None);
+            target.receive_damage(attacker, raw_damage);
+        };
     }
 
-    pub fn ability_q(&self, rank: u8, target: &mut dyn Champion, charge_seconds: f64) {
-        const MAX_SCALE: f64 = 1.0;
-        let percent_damage = MAX_SCALE.min(charge_seconds * 0.10 / 0.125) + 1.0;
-        let base_ad = self.get_base_ad();
-        let bonus_ad = self.get_bonus_ad();
+    pub fn ability_r(r_data: AbiltyDamageInfo) -> impl Fn(&mut Champion, &Champion, &CastingData) {
+        return move |target: &mut Champion, attacker: &Champion, casting_data: &CastingData| {
+            let rank = casting_data.rank;
+            let bonus_ad = attacker.get_bonus_ad();
+            let base_ad = attacker.get_base_ad();
 
-        let mut raw_damage = self.q_data.to_damage_amount(rank, base_ad, bonus_ad);
-        raw_damage *= percent_damage;
-        target.receive_damage(self, raw_damage);
+            let raw_damage = r_data.to_damage_amount(rank, base_ad, bonus_ad);
+
+            target.receive_damage(attacker, raw_damage)
+        };
     }
 
-    pub fn ability_w(&self, rank: u8, target: &mut dyn Champion) {
-        let bonus_ad = self.get_bonus_ad();
-        let percent_health_dmg = 0.01 * self.w_data.target_max_health_ratio[rank as usize]
-            + 0.01 * self.w_data.bonus_ad_ratio * bonus_ad;
-        let raw_damage = percent_health_dmg * target.get_max_health();
-        target.receive_damage(self, raw_damage);
+    pub fn auto_attack() -> impl Fn(&mut Champion, &Champion, &CastingData) {
+        return move |target: &mut Champion, attacker: &Champion, _casting_data: &CastingData| {
+            let bonus_ad = attacker.get_bonus_ad();
+            let base_ad = attacker.get_base_ad();
+
+            let attack = BasicAttack::new(base_ad, bonus_ad);
+
+            let raw_damage =
+                attack.get_damage_to_target(&VitalityData::default(), &attacker.crit_info, None);
+            target.receive_damage(attacker, raw_damage);
+        };
     }
 
-    pub fn ability_e(
-        &self,
-        rank: u8,
-        target: &mut dyn Champion,
-        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
-    ) {
-        let bonus_ad = self.get_bonus_ad();
-        let base_ad = self.get_base_ad();
-        let e_dmg = self.e_data.to_damage_amount(rank, base_ad, bonus_ad);
-        let attack = BasicAttack::new(e_dmg, 0.0);
-        let raw_damage = attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
-        target.receive_damage(self, raw_damage)
-    }
-
-    pub fn ability_r(&self, rank: u8, target: &mut dyn Champion) {
-        let base_ad = self.get_base_ad();
-        let bonus_ad = self.get_bonus_ad();
-        let raw_damage = self.r_data.to_damage_amount(rank, base_ad, bonus_ad);
-
-        target.receive_damage(self, raw_damage)
-    }
-
-    pub fn auto_attack(
-        &self,
-        target: &mut dyn Champion,
-        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
-    ) {
-        let base_ad = self.get_base_ad();
-        let bonus_ad = self.get_bonus_ad();
-        let attack = BasicAttack::new(base_ad, bonus_ad);
-
-        let raw_damage = attack.get_damage_to_target(&VitalityData::default(), crit_info, None);
-        target.receive_damage(self, raw_damage)
-    }
-    pub fn ult_combo(
-        &self,
-        ranks: [u8; 4],
-        target: &mut dyn Champion,
-        crit_info: &Option<(&CritAdjuster, CritCalculation)>,
-    ) {
+    pub fn ult_combo(ranks: [u8; 4]) -> Vec<(String, CastingData)> {
         //q , auto , e , (w), ult, auto, e
-        self.ability_q(ranks[0], target, Vi::Q_MAX_DAMAGE_CHARGE);
-        self.auto_attack(target, crit_info);
-        self.ability_e(ranks[2], target, crit_info);
-        self.ability_w(ranks[1], target);
-        self.ability_r(ranks[3], target);
-        self.auto_attack(target, crit_info);
-        self.ability_e(ranks[2], target, crit_info);
+        let mut out = Vec::new();
+
+        out.push((
+            "q".to_string(),
+            CastingData {
+                rank: ranks[0],
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        ));
+        out.push(("auto".to_string(), CastingData::new(0)));
+        out.push((
+            "e".to_string(),
+            CastingData {
+                rank: ranks[2],
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        ));
+        out.push((
+            "w".to_string(),
+            CastingData {
+                rank: ranks[1],
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        ));
+        out.push((
+            "r".to_string(),
+            CastingData {
+                rank: ranks[1],
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        ));
+        out.push(("auto".to_string(), CastingData::new(0)));
+        out.push((
+            "e".to_string(),
+            CastingData {
+                rank: ranks[2],
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        ));
+
+        return out;
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::champions::target_dummy::TargetDummy;
-
     use super::*;
     use rstest::rstest;
 
     // values sampled from game on 13.7
     #[rstest]
     fn test_abilty_q() {
-        let mut vi = Vi::new(1);
+        let mut vi_data = Vi::new();
+        let vi_closures = vi_data.get_name_closures();
+        let mut vi = Champion::new(1, "Vi".to_string(), vi_closures);
 
-        let target = &mut TargetDummy::new();
-        vi.ability_q(0, target, 0.0);
+        let target = &mut Champion::new_dummy();
+
+        vi.execute_ability(
+            "q",
+            target,
+            &CastingData {
+                rank: 0,
+                charge: 0.0,
+            },
+        );
         assert_eq!(45, target.get_missing_health().round() as u32);
 
         target.full_heal();
-        vi.ability_q(0, target, Vi::Q_MAX_DAMAGE_CHARGE);
+        vi.execute_ability(
+            "q",
+            target,
+            &CastingData {
+                rank: 0,
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        );
         assert_eq!(90, target.get_missing_health().round() as u32);
 
         vi.level = 3;
         vi.stats.bonus_attack_damage += 30.0;
 
         target.full_heal();
-        vi.ability_q(1, target, Vi::Q_MAX_DAMAGE_CHARGE);
+
+        vi.execute_ability(
+            "q",
+            target,
+            &CastingData {
+                rank: 1,
+                charge: Vi::Q_MAX_DAMAGE_CHARGE,
+            },
+        );
         assert_eq!(188, target.get_missing_health().round() as u32);
     }
 
     #[rstest]
     fn test_full_combo() {
-        let mut vi = Vi::new(6);
+        let level = 6;
+
+        let mut vi_data = Vi::new();
+        let vi_closures = vi_data.get_name_closures();
+        let mut vi = Champion::new(level, "Vi".to_string(), vi_closures);
+
         vi.stats.bonus_attack_damage += 40.0;
-        let target = &mut TargetDummy::new();
-        vi.ult_combo([0, 0, 2, 0], target, &None);
+        let target = &mut Champion::new_dummy();
+        vi.execute_combo(Vi::ult_combo([0, 0, 2, 0]), target);
         assert_eq!(965, target.get_missing_health().round() as u32);
     }
 }

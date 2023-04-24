@@ -44,7 +44,7 @@ impl BasicAttack {
     pub fn get_damage_to_target(
         &self,
         target: &VitalityData,
-        crit_adjuster: &Option<(&CritAdjuster, CritCalculation)>,
+        crit_adjuster: &Option<(CritAdjuster, CritCalculation)>,
         armor_reducer: Option<&ArmorReducer>,
     ) -> f64 {
         let damage = self.get_total_attack_damage();
@@ -109,7 +109,7 @@ pub fn get_dps(
     attack: &BasicAttack,
     target: &VitalityData,
     armor_reducer: Option<&ArmorReducer>,
-    crit_adjuster: Option<&CritAdjuster>,
+    crit_adjuster: Option<CritAdjuster>,
 ) -> f64 {
     const CRIT_CALC: CritCalculation = CritCalculation::AverageOutcome;
     let crit_tuple = crit_adjuster.map(|v| (v, CRIT_CALC));
