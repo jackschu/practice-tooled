@@ -11,6 +11,13 @@ pub fn lethality_to_pen(lethality: f64, level: u8) -> f64 {
     return lethality * (0.6 + 0.4 * (level as f64) / 18.0);
 }
 
+/**
+ * Assumes l and r are in the range 0-100
+ */
+pub fn stack_multiplicative_reduction(l: f64, r: f64) -> f64 {
+    100.0 - ((100.0 - l) * (100.0 - r) / 100.0)
+}
+
 pub fn stat_at_level(base: f64, growth: f64, level: u8) -> f64 {
     return base + growth * (level as f64 - 1.0) * (0.7025 + 0.0175 * (level as f64 - 1.0));
 }
@@ -56,5 +63,12 @@ mod tests {
     #[case(544.0, 250.0/3.0)] // test cdr past 500 cap
     fn test_haste_to_cdr(#[case] haste: f64, #[case] expected: f64) {
         assert_relative_eq!(expected, haste_to_cdr(haste))
+    }
+
+    #[rstest]
+    #[case(10.0, 10.0, 19.0)]
+    #[case(10.0, 25.0, 32.5)]
+    fn test_multiplicative_reduction(#[case] l: f64, #[case] r: f64, #[case] expected: f64) {
+        assert_relative_eq!(expected, stack_multiplicative_reduction(l, r))
     }
 }

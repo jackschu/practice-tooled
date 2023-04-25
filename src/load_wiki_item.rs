@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::{collections::HashMap, fs::File, io::Read};
 
 use crate::{
+    core::stack_multiplicative_reduction,
     item_effects::UnknownItemEffect,
     load_champion::{ChampionStatModifier, ChampionStats},
 };
@@ -89,7 +90,10 @@ impl ChampionStatModifier for WikiItemStatDeltas {
         stats.ability_haste += self.ability_haste.unwrap_or(0.0);
 
         stats.ability_power += self.ability_power.unwrap_or(0.0);
-        stats.percent_armor_pen += self.percent_armor_pen.unwrap_or(0.0);
+        stats.percent_armor_pen = stack_multiplicative_reduction(
+            self.percent_armor_pen.unwrap_or(0.0),
+            stats.percent_armor_pen,
+        );
         stats.omnivamp += self.omnivamp.unwrap_or(0.0);
     }
 }
