@@ -5,7 +5,7 @@ use crate::{
     attack::{BasicAttack, CritAdjuster, CritCalculation},
     core::{resist_damage, stat_at_level},
     load_champion::{load_champion_stats, ChampionStats},
-    target::{Target, VitalityData},
+    target::{EffectData, EffectResult, Target, VitalityData},
 };
 
 #[derive(Eq, Hash, PartialEq)]
@@ -23,6 +23,7 @@ pub struct Champion {
     pub current_health: f64,
     pub abilities: NamedClosures,
     pub crit_info: Option<(CritAdjuster, CritCalculation)>,
+    pub effects: Vec<EffectData>,
 }
 
 #[derive(Default)]
@@ -62,6 +63,7 @@ impl Champion {
                 data: HashMap::new(),
             },
             crit_info: None,
+            effects: Vec::new(),
         };
     }
 
@@ -80,7 +82,12 @@ impl Champion {
             current_health: health,
             abilities,
             crit_info: None,
+            effects: Vec::new(),
         };
+    }
+
+    pub fn add_effect(&mut self, effect: EffectData) {
+        self.effects.push(effect)
     }
 
     pub fn execute_combo(
@@ -139,7 +146,15 @@ impl Champion {
     }
 
     pub fn receive_damage(&mut self, attacker: &Champion, damage: f64) {
-        let armor_reducer: ArmorReducer = (&attacker.stats, attacker.level).into();
+        let mut armor_reducer: ArmorReducer = (&attacker.stats, attacker.level).into();
+        self.effects
+            .iter()
+            .filter_map(|effect| match &effect.result {
+                EffectResult::ArmorReducer(reducer) => Some(reducer),
+                _ => None,
+            })
+            .for_each(|other_reducer| armor_reducer.add_armor_reducer(&other_reducer));
+
         let target_data = self.get_vitality_data();
         let effective_armor = armor_reducer.get_effective_armor(&target_data);
         let final_damage = resist_damage(damage, effective_armor);

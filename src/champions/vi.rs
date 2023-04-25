@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{attack::BasicAttack, target::VitalityData};
+use crate::{
+    armor_reducer::ArmorReducer,
+    attack::BasicAttack,
+    target::{EffectData, EffectResult, VitalityData},
+};
 
 use super::champion::{CastingData, Champion, ChampionAbilites, NamedClosures};
 
@@ -111,6 +115,13 @@ impl Vi {
                 + 0.01 * w_data.bonus_ad_ratio * bonus_ad;
             let raw_damage = percent_health_dmg * target.get_max_health();
             target.receive_damage(attacker, raw_damage);
+            target.add_effect(EffectData {
+                ttl: 4.0,
+                result: EffectResult::ArmorReducer(ArmorReducer {
+                    percent_armor_reduction: 20.0,
+                    ..Default::default()
+                }),
+            });
         };
     }
 

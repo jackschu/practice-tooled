@@ -4,7 +4,7 @@ use crate::{
     target::VitalityData,
 };
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct ArmorReducer {
     pub flat_armor_reduction: f64,
     pub percent_armor_reduction: f64,

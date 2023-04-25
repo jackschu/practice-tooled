@@ -1,7 +1,4 @@
-use crate::{
-    core::stat_at_level,
-    load_champion::{ChampionStatModifier, ChampionStats},
-};
+use crate::{armor_reducer::ArmorReducer, core::stat_at_level, load_champion::ChampionStats};
 
 pub trait Target {
     fn get_vitality_data(&self) -> VitalityData;
@@ -22,13 +19,9 @@ pub struct EffectData {
 }
 
 pub enum EffectResult {
-    ThreeHit {
-        on_third_hit: Box<EffectResult>,
-    },
+    ThreeHit { on_third_hit: Box<EffectResult> },
     Damage,
-    StatChange {
-        stats: Box<dyn ChampionStatModifier>,
-    },
+    ArmorReducer(ArmorReducer),
 }
 
 impl From<(&ChampionStats, u8)> for VitalityData {
