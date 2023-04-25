@@ -1,4 +1,8 @@
-use crate::{core::lethality_to_pen, load_champion::ChampionStats, target::VitalityData};
+use crate::{
+    core::{lethality_to_pen, stack_multiplicative_reduction},
+    load_champion::ChampionStats,
+    target::VitalityData,
+};
 
 #[derive(Default, Clone)]
 pub struct ArmorReducer {
@@ -11,6 +15,22 @@ pub struct ArmorReducer {
 }
 
 impl ArmorReducer {
+    pub fn add_armor_reducer(&mut self, incoming: &ArmorReducer) {
+        self.flat_armor_pen += incoming.flat_armor_pen;
+        self.flat_armor_reduction += incoming.flat_armor_reduction;
+        self.percent_armor_reduction = stack_multiplicative_reduction(
+            incoming.percent_armor_reduction,
+            self.percent_armor_reduction,
+        );
+
+        self.percent_armor_pen =
+            stack_multiplicative_reduction(incoming.percent_armor_pen, self.percent_armor_pen);
+
+        self.percent_bonus_armor_pen = stack_multiplicative_reduction(
+            incoming.percent_bonus_armor_pen,
+            self.percent_bonus_armor_pen,
+        );
+    }
     pub fn apply_armor_reduction(&self, target: &mut VitalityData) {
         let total_armor = target.base_armor + target.bonus_armor;
         let base_ratio = if total_armor != 0.0 {
