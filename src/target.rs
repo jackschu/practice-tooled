@@ -1,4 +1,9 @@
-use crate::{armor_reducer::ArmorReducer, core::stat_at_level, load_champion::ChampionStats};
+use crate::{
+    armor_reducer::ArmorReducer,
+    champions::champion::{self, Champion},
+    core::stat_at_level,
+    load_champion::ChampionStats,
+};
 
 pub trait Target {
     fn get_vitality_data(&self) -> VitalityData;
@@ -18,8 +23,49 @@ pub struct EffectData {
     pub result: EffectResult,
 }
 
+pub struct ThreeHit {
+    hit_count: u8,
+    pub unique_name: String,
+    pub on_third_hit: Box<EffectData>,
+}
+
+impl ThreeHit {
+    pub fn upsert_to_champ(
+        champion: &mut Champion,
+        unique_name: String,
+        effect: EffectData,
+        ttl: f64,
+    ) {
+        let mut maybe_found: Option<ThreeHit> = None;
+        if let Some(index) = champion.effects.iter().position(|e| match e.result {
+            EffectResult::ThreeHit(_) => true,
+            _ => false,
+        }) {
+            if let EffectResult::ThreeHit(out) = champion.effects.remove(index).result {
+                maybe_found = Some(out);
+            }
+        }
+
+        let mut found = maybe_found.unwrap_or(ThreeHit {
+            hit_count: 0,
+            //trigger_type,
+            on_third_hit: Box::new(effect),
+            unique_name,
+        });
+        found.hit_count += 1;
+        if found.hit_count >= 3 {
+            champion.add_effect(*found.on_third_hit);
+        } else {
+            champion.add_effect(EffectData {
+                ttl,
+                result: EffectResult::ThreeHit(found),
+            });
+        }
+    }
+}
+
 pub enum EffectResult {
-    ThreeHit { on_third_hit: Box<EffectResult> },
+    ThreeHit(ThreeHit),
     Damage,
     ArmorReducer(ArmorReducer),
 }
