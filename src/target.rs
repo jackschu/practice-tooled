@@ -1,6 +1,8 @@
+use std::rc::Weak;
+
 use crate::{
     armor_reducer::ArmorReducer,
-    champions::champion::{self, Champion},
+    champions::champion::{CastingData, Champion, ChampionAbilites},
     core::stat_at_level,
     load_champion::ChampionStats,
 };
@@ -32,13 +34,13 @@ pub struct ThreeHit {
 impl ThreeHit {
     pub fn upsert_to_champ(
         champion: &mut Champion,
-        unique_name: String,
+        unique_name: &str,
         effect: EffectData,
         ttl: f64,
     ) {
         let mut maybe_found: Option<ThreeHit> = None;
-        if let Some(index) = champion.effects.iter().position(|e| match e.result {
-            EffectResult::ThreeHit(_) => true,
+        if let Some(index) = champion.effects.iter().position(|e| match &e.result {
+            EffectResult::ThreeHit(candidate) => candidate.unique_name == unique_name,
             _ => false,
         }) {
             if let EffectResult::ThreeHit(out) = champion.effects.remove(index).result {
@@ -50,11 +52,20 @@ impl ThreeHit {
             hit_count: 0,
             //trigger_type,
             on_third_hit: Box::new(effect),
-            unique_name,
+            unique_name: unique_name.to_string(),
         });
         found.hit_count += 1;
         if found.hit_count >= 3 {
-            champion.add_effect(*found.on_third_hit);
+            if let EffectResult::AbilityEffect {
+                attacker,
+                name,
+                data,
+            } = found.on_third_hit.result
+            {
+                Champion::execute_ability(attacker, name, champion, &data);
+            } else {
+                champion.add_effect(*found.on_third_hit);
+            }
         } else {
             champion.add_effect(EffectData {
                 ttl,
@@ -66,8 +77,12 @@ impl ThreeHit {
 
 pub enum EffectResult {
     ThreeHit(ThreeHit),
-    Damage,
     ArmorReducer(ArmorReducer),
+    AbilityEffect {
+        attacker: Weak<Champion>,
+        name: ChampionAbilites,
+        data: CastingData,
+    },
 }
 
 impl From<(&ChampionStats, u8)> for VitalityData {

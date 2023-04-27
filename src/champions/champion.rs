@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    rc::{Rc, Weak},
+};
 
 use crate::{
     armor_reducer::ArmorReducer,
@@ -8,7 +11,7 @@ use crate::{
     target::{EffectData, EffectResult, Target, VitalityData},
 };
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Debug)]
 pub enum ChampionAbilites {
     Q,
     W,
@@ -24,6 +27,7 @@ pub struct Champion {
     pub abilities: NamedClosures,
     pub crit_info: Option<(CritAdjuster, CritCalculation)>,
     pub effects: Vec<EffectData>,
+    pub ranks: [u8; 4],
 }
 
 #[derive(Default)]
@@ -41,7 +45,8 @@ impl CastingData {
     }
 }
 pub struct NamedClosures {
-    pub data: HashMap<ChampionAbilites, Box<dyn Fn(&mut Champion, &Champion, &CastingData) -> ()>>,
+    pub data:
+        HashMap<ChampionAbilites, Box<dyn Fn(&mut Champion, Rc<Champion>, &CastingData) -> ()>>,
 }
 
 impl Champion {
@@ -64,6 +69,7 @@ impl Champion {
             },
             crit_info: None,
             effects: Vec::new(),
+            ranks: [0, 0, 0, 0],
         };
     }
 
@@ -71,7 +77,7 @@ impl Champion {
         Champion::new_dummy_with_resist(0.0, 0.0)
     }
 
-    pub fn new(level: u8, name: String, abilities: NamedClosures) -> Champion {
+    pub fn new(name: String, level: u8, ranks: [u8; 4], abilities: NamedClosures) -> Champion {
         let stats = load_champion_stats(name);
         let health = stat_at_level(stats.health, stats.health_per_level, level);
         let initial_armor = stats.armor;
@@ -83,6 +89,7 @@ impl Champion {
             abilities,
             crit_info: None,
             effects: Vec::new(),
+            ranks,
         };
     }
 
@@ -91,23 +98,26 @@ impl Champion {
     }
 
     pub fn execute_combo(
-        &self,
+        self: Rc<Self>,
         combo: Vec<(ChampionAbilites, CastingData)>,
         target: &mut Champion,
     ) {
         for (name, data) in combo {
-            self.execute_ability(name, target, &data)
+            Self::execute_ability(Rc::downgrade(&self), name, target, &data)
         }
     }
 
     pub fn execute_ability(
-        &self,
+        attacker_ref: Weak<Self>,
         name: ChampionAbilites,
         target: &mut Champion,
         casting_data: &CastingData,
     ) {
-        let func = self.abilities.data.get(&name).unwrap();
-        func(target, self, casting_data);
+        let maybe_attacker = attacker_ref.upgrade();
+        if let Some(attacker) = maybe_attacker {
+            let func = attacker.abilities.data.get(&name).unwrap();
+            func(target, Rc::clone(&attacker), casting_data);
+        }
     }
 
     pub fn get_base_armor(&self) -> f64 {
