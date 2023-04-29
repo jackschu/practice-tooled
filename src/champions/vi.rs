@@ -4,6 +4,7 @@ use crate::{
     armor_reducer::ArmorReducer,
     attack::BasicAttack,
     target::{EffectData, EffectResult, ThreeHit, VitalityData},
+    time_manager::TIME,
 };
 
 use super::champion::{CastingData, Champion, ChampionAbilites, NamedClosures};
@@ -121,7 +122,7 @@ impl Vi {
                         ..Default::default()
                     },
                 },
-                ttl: 0.0,
+                expiry: 0.0,
             },
             4.0,
         );
@@ -133,7 +134,7 @@ impl Vi {
                     percent_armor_reduction: 20.0,
                     ..Default::default()
                 }),
-                ttl: 4.0,
+                expiry: TIME.with(|time| *time.borrow() + 4.0),
             },
             4.0,
         )

@@ -5,6 +5,7 @@ use crate::{
     champions::champion::{CastingData, Champion, ChampionAbilites},
     core::stat_at_level,
     load_champion::ChampionStats,
+    time_manager::TIME,
 };
 
 pub trait Target {
@@ -21,7 +22,7 @@ pub struct VitalityData {
 }
 
 pub struct EffectData {
-    pub ttl: f64,
+    pub expiry: f64,
     pub result: EffectResult,
 }
 
@@ -68,7 +69,7 @@ impl ThreeHit {
             }
         } else {
             champion.add_effect(EffectData {
-                ttl,
+                expiry: TIME.with(|time| *time.borrow() + ttl),
                 result: EffectResult::ThreeHit(found),
             });
         }
