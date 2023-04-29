@@ -112,8 +112,8 @@ impl Vi {
     pub fn apply_w_effect(target: &mut Champion, attacker: Rc<Champion>) {
         ThreeHit::upsert_to_champ(
             target,
-            "Denting Blows Damage",
             EffectData {
+                unique_name: "Denting Blows Damage".to_string(),
                 result: EffectResult::AbilityEffect {
                     attacker: Rc::downgrade(&attacker),
                     name: ChampionAbilites::W,
@@ -128,8 +128,8 @@ impl Vi {
         );
         ThreeHit::upsert_to_champ(
             target,
-            "Denting Blows Armor",
             EffectData {
+                unique_name: "Denting Blows Armor".to_string(),
                 result: EffectResult::ArmorReducer(ArmorReducer {
                     percent_armor_reduction: 20.0,
                     ..Default::default()

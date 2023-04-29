@@ -23,37 +23,32 @@ pub struct VitalityData {
 
 pub struct EffectData {
     pub expiry: f64,
+    pub unique_name: String,
     pub result: EffectResult,
 }
 
 pub struct ThreeHit {
     hit_count: u8,
-    pub unique_name: String,
     pub on_third_hit: Box<EffectData>,
 }
 
 impl ThreeHit {
-    pub fn upsert_to_champ(
-        champion: &mut Champion,
-        unique_name: &str,
-        effect: EffectData,
-        ttl: f64,
-    ) {
+    pub fn upsert_to_champ(champion: &mut Champion, effect: EffectData, ttl: f64) {
         let mut maybe_found: Option<ThreeHit> = None;
-        if let Some(index) = champion.effects.iter().position(|e| match &e.result {
-            EffectResult::ThreeHit(candidate) => candidate.unique_name == unique_name,
-            _ => false,
+        if let Some(index) = champion.effects.iter().position(|candidate| {
+            candidate.unique_name == effect.unique_name
+                && matches!(candidate.result, EffectResult::ThreeHit(_))
         }) {
             if let EffectResult::ThreeHit(out) = champion.effects.remove(index).result {
                 maybe_found = Some(out);
             }
         }
+        let three_hit_name = effect.unique_name.clone();
 
         let mut found = maybe_found.unwrap_or(ThreeHit {
             hit_count: 0,
             //trigger_type,
             on_third_hit: Box::new(effect),
-            unique_name: unique_name.to_string(),
         });
         found.hit_count += 1;
         if found.hit_count >= 3 {
@@ -69,6 +64,7 @@ impl ThreeHit {
             }
         } else {
             champion.add_effect(EffectData {
+                unique_name: three_hit_name,
                 expiry: TIME.with(|time| *time.borrow() + ttl),
                 result: EffectResult::ThreeHit(found),
             });

@@ -9,6 +9,7 @@ use crate::{
     core::{resist_damage, stat_at_level},
     load_champion::{load_champion_stats, ChampionStats},
     target::{EffectData, EffectResult, Target, VitalityData},
+    time_manager::TIME,
 };
 
 #[derive(Eq, Hash, PartialEq, Debug)]
@@ -159,6 +160,7 @@ impl Champion {
         let mut armor_reducer: ArmorReducer = (&attacker.stats, attacker.level).into();
         self.effects
             .iter()
+            .filter(|effect| TIME.with(|time| effect.expiry >= *time.borrow()))
             .filter_map(|effect| match &effect.result {
                 EffectResult::ArmorReducer(reducer) => Some(reducer),
                 _ => None,
