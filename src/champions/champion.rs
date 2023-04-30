@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    mem,
     rc::{Rc, Weak},
 };
 
@@ -20,6 +21,7 @@ pub enum ChampionAbilites {
     R,
     AUTO,
 }
+
 pub struct Champion {
     pub stats: ChampionStats,
     pub level: u8,
@@ -31,7 +33,7 @@ pub struct Champion {
     pub ranks: [u8; 4],
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CastingData {
     pub charge: f64,
     pub rank: u8,
@@ -96,6 +98,16 @@ impl Champion {
 
     pub fn add_effect(&mut self, effect: EffectData) {
         self.effects.push(effect)
+    }
+
+    pub fn upsert_effect(&mut self, effect: EffectData) {
+        if let Some(index) = self.effects.iter().position(|candidate| {
+            candidate.unique_name == effect.unique_name
+                && mem::discriminant(&candidate.result) == mem::discriminant(&effect.result)
+        }) {
+            self.effects.remove(index);
+        };
+        self.add_effect(effect);
     }
 
     pub fn execute_combo(

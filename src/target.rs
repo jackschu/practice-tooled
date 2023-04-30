@@ -1,4 +1,4 @@
-use std::rc::Weak;
+use std::{fmt, rc::Weak};
 
 use crate::{
     armor_reducer::ArmorReducer,
@@ -21,12 +21,14 @@ pub struct VitalityData {
     pub current_health: f64,
 }
 
+#[derive(Debug)]
 pub struct EffectData {
     pub expiry: f64,
     pub unique_name: String,
     pub result: EffectResult,
 }
 
+#[derive(Debug)]
 pub struct ThreeHit {
     hit_count: u8,
     pub on_third_hit: Box<EffectData>,
@@ -60,7 +62,7 @@ impl ThreeHit {
             {
                 Champion::execute_ability(attacker, name, champion, &data);
             } else {
-                champion.add_effect(*found.on_third_hit);
+                champion.upsert_effect(*found.on_third_hit);
             }
         } else {
             champion.add_effect(EffectData {
@@ -80,6 +82,20 @@ pub enum EffectResult {
         name: ChampionAbilites,
         data: CastingData,
     },
+}
+
+impl fmt::Debug for EffectResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::ThreeHit(inside) => write!(f, "{:?}", inside),
+            Self::ArmorReducer(inside) => write!(f, "{:?}", inside),
+            Self::AbilityEffect {
+                attacker: _,
+                name,
+                data,
+            } => write!(f, "{:?} {:?}", name, data),
+        }
+    }
 }
 
 impl From<(&ChampionStats, u8)> for VitalityData {

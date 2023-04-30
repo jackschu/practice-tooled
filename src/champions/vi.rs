@@ -324,4 +324,52 @@ mod tests {
 
         assert_eq!(905, target.get_missing_health().round() as u32);
     }
+
+    #[rstest]
+    fn test_w_via_autos() {
+        let target = &mut Champion::new_dummy_with_resist(30.0, 0.0);
+
+        let mut vi_data = Vi::new();
+        let vi_closures = vi_data.get_name_closures();
+        let vi = Rc::new(Champion::new(
+            Vi::NAME.to_string(),
+            6,
+            [0, 0, 2, 0],
+            vi_closures,
+        ));
+
+        const HITS: usize = 9;
+        let mut missing_healths: [f64; HITS] = [0.0; HITS];
+        for i in 0..HITS {
+            Champion::execute_ability(
+                Rc::downgrade(&vi),
+                ChampionAbilites::AUTO,
+                target,
+                &CastingData {
+                    ..Default::default()
+                },
+            );
+
+            missing_healths[i] = target.get_missing_health();
+        }
+        let mut damage: [f64; HITS] = [0.0; HITS];
+        damage[0] = missing_healths[0];
+        for i in 1..HITS {
+            damage[i] = missing_healths[i] - missing_healths[i - 1];
+        }
+        assert_eq!(
+            damage[1], damage[0],
+            "first two autos should do equal damage"
+        );
+        assert!(damage[2] > damage[1], "third hit does bonus damage");
+        assert!(
+            damage[4] > damage[1],
+            "fourth hit does more damage than first/second"
+        );
+        assert_eq!(
+            damage[8], damage[5],
+            "second/third w proc does equal damage"
+        );
+        assert!(damage[2] < damage[5], "first w proc does less than second");
+    }
 }
