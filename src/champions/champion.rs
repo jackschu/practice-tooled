@@ -99,48 +99,62 @@ impl Champion {
         self.effects.push(effect)
     }
 
-    pub fn upsert_effect(&mut self, effect: EffectData) {
+    pub fn upsert_effect(&mut self, effect: EffectData) -> Option<()> {
+        let other_expiry = effect.expiry;
         let mut to_add = effect;
         if let Some(index) = self
             .effects
             .iter()
             .position(|candidate| candidate == &to_add)
         {
-            to_add = self.effects.remove(index);
-            if TIME.with(|time| to_add.expiry >= *time.borrow()) {
-                match to_add {
-                    EffectData {
-                        result: EffectResult::ThreeHit(mut three_hit_result),
+            let maybe_expired = self.effects.remove(index);
+            if TIME.with(|time| maybe_expired.expiry >= *time.borrow()) {
+                to_add = self.bump_found_effect(maybe_expired)?;
+                to_add.expiry = to_add.expiry.max(other_expiry);
+            }
+        }
+        self.add_effect(to_add);
+        Some(())
+    }
+
+    /**
+     * Bumps the given effect, which entails modifying its run count, or increasing its expiry and / or executing it
+     */
+    fn bump_found_effect(&mut self, effect: EffectData) -> Option<EffectData> {
+        match effect {
+            EffectData {
+                result: EffectResult::ThreeHit(mut three_hit_result),
+                expiry,
+                unique_name,
+            } => {
+                three_hit_result.hit_count += 1;
+                if three_hit_result.hit_count >= 2 {
+                    if let EffectResult::AbilityEffect {
+                        attacker,
+                        name,
+                        data,
+                    } = *three_hit_result.on_third_hit.result
+                    {
+                        Champion::execute_ability(attacker, name, self, &data);
+                        return None;
+                    } else {
+                        self.upsert_effect(EffectData {
+                            expiry: TIME
+                                .with(|time| *time.borrow() + three_hit_result.on_third_hit.ttl),
+                            unique_name: three_hit_result.on_third_hit.unique_name,
+                            result: *three_hit_result.on_third_hit.result,
+                        });
+                        return None;
+                    }
+                } else {
+                    return Some(EffectData {
                         expiry,
                         unique_name,
-                    } => {
-                        three_hit_result.hit_count += 1;
-                        if three_hit_result.hit_count >= 2 {
-                            if let EffectResult::AbilityEffect {
-                                attacker,
-                                name,
-                                data,
-                            } = three_hit_result.on_third_hit.result
-                            {
-                                Champion::execute_ability(attacker, name, self, &data);
-                            } else {
-                                self.upsert_effect(*three_hit_result.on_third_hit);
-                            }
-                        } else {
-                            self.add_effect(EffectData {
-                                expiry,
-                                unique_name,
-                                result: EffectResult::ThreeHit(three_hit_result),
-                            });
-                        }
-                    }
-                    _ => self.add_effect(to_add),
+                        result: EffectResult::ThreeHit(three_hit_result),
+                    });
                 }
-            } else {
-                self.add_effect(to_add);
             }
-        } else {
-            self.add_effect(to_add);
+            _ => Some(effect),
         }
     }
 

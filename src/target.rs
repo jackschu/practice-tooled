@@ -29,9 +29,16 @@ pub struct EffectData {
 }
 
 #[derive(Debug)]
+pub struct ThreeHitApplyInfo {
+    pub ttl: f64,
+    pub unique_name: String,
+    pub result: Box<EffectResult>,
+}
+
+#[derive(Debug)]
 pub struct ThreeHit {
     pub hit_count: u8,
-    pub on_third_hit: Box<EffectData>,
+    pub on_third_hit: ThreeHitApplyInfo,
 }
 
 impl PartialEq for EffectData {
@@ -42,11 +49,11 @@ impl PartialEq for EffectData {
 }
 
 impl ThreeHit {
-    pub fn upsert_to_champ(champion: &mut Champion, resulting_effect: EffectData, ttl: f64) {
+    pub fn upsert_to_champ(champion: &mut Champion, resulting_effect: ThreeHitApplyInfo, ttl: f64) {
         let three_hit_name = resulting_effect.unique_name.clone();
         let three_hit_effect = ThreeHit {
             hit_count: 0,
-            on_third_hit: Box::new(resulting_effect),
+            on_third_hit: resulting_effect,
         };
         let three_hit_data = EffectData {
             unique_name: three_hit_name,

@@ -3,8 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use crate::{
     armor_reducer::ArmorReducer,
     attack::BasicAttack,
-    target::{EffectData, EffectResult, ThreeHit, VitalityData},
-    time_manager::TIME,
+    target::{EffectResult, ThreeHit, ThreeHitApplyInfo, VitalityData},
 };
 
 use super::champion::{CastingData, Champion, ChampionAbilites, NamedClosures};
@@ -112,29 +111,29 @@ impl Vi {
     pub fn apply_w_effect(target: &mut Champion, attacker: Rc<Champion>) {
         ThreeHit::upsert_to_champ(
             target,
-            EffectData {
+            ThreeHitApplyInfo {
                 unique_name: "Denting Blows Damage".to_string(),
-                result: EffectResult::AbilityEffect {
+                result: Box::new(EffectResult::AbilityEffect {
                     attacker: Rc::downgrade(&attacker),
                     name: ChampionAbilites::W,
                     data: CastingData {
                         rank: attacker.ranks[1],
                         ..Default::default()
                     },
-                },
-                expiry: 0.0,
+                }),
+                ttl: 0.0,
             },
             4.0,
         );
         ThreeHit::upsert_to_champ(
             target,
-            EffectData {
+            ThreeHitApplyInfo {
                 unique_name: "Denting Blows Armor".to_string(),
-                result: EffectResult::ArmorReducer(ArmorReducer {
+                result: Box::new(EffectResult::ArmorReducer(ArmorReducer {
                     percent_armor_reduction: 20.0,
                     ..Default::default()
-                }),
-                expiry: TIME.with(|time| *time.borrow() + 4.0),
+                })),
+                ttl: 4.0,
             },
             4.0,
         )
@@ -246,6 +245,7 @@ mod tests {
         item_effects::{ChampionApplyable, ConcreteItemEffect},
         load_champion::ChampionStatModifier,
         load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats},
+        time_manager::TIME,
     };
 
     use super::*;
@@ -349,9 +349,11 @@ mod tests {
                     ..Default::default()
                 },
             );
+            TIME.with(|time| *time.borrow_mut() += 1.0);
 
             missing_healths[i] = target.get_missing_health();
         }
+
         let mut damage: [f64; HITS] = [0.0; HITS];
         damage[0] = missing_healths[0];
         for i in 1..HITS {
@@ -359,7 +361,8 @@ mod tests {
         }
         assert_eq!(
             damage[1], damage[0],
-            "first two autos should do equal damage"
+            "first two autos should do equal damage {:#?}",
+            damage
         );
         assert!(
             damage[2] > damage[1],
@@ -368,12 +371,18 @@ mod tests {
         );
         assert!(
             damage[4] > damage[1],
-            "fourth hit does more damage than first/second"
+            "fourth hit does more damage than first/second {:#?}",
+            damage
         );
         assert_eq!(
             damage[8], damage[5],
-            "second/third w proc does equal damage"
+            "second/third w proc does equal damage {:#?}",
+            damage
         );
-        assert!(damage[2] < damage[5], "first w proc does less than second");
+        assert!(
+            damage[2] < damage[5],
+            "first w proc does less than second {:#?}",
+            damage
+        );
     }
 }
