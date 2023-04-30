@@ -95,19 +95,53 @@ impl Champion {
         };
     }
 
-    pub fn add_effect(&mut self, effect: EffectData) {
+    fn add_effect(&mut self, effect: EffectData) {
         self.effects.push(effect)
     }
 
     pub fn upsert_effect(&mut self, effect: EffectData) {
+        let mut to_add = effect;
         if let Some(index) = self
             .effects
             .iter()
-            .position(|candidate| candidate == &effect)
+            .position(|candidate| candidate == &to_add)
         {
-            self.effects.remove(index);
-        };
-        self.add_effect(effect);
+            to_add = self.effects.remove(index);
+            if TIME.with(|time| to_add.expiry >= *time.borrow()) {
+                match to_add {
+                    EffectData {
+                        result: EffectResult::ThreeHit(mut three_hit_result),
+                        expiry,
+                        unique_name,
+                    } => {
+                        three_hit_result.hit_count += 1;
+                        if three_hit_result.hit_count >= 2 {
+                            if let EffectResult::AbilityEffect {
+                                attacker,
+                                name,
+                                data,
+                            } = three_hit_result.on_third_hit.result
+                            {
+                                Champion::execute_ability(attacker, name, self, &data);
+                            } else {
+                                self.upsert_effect(*three_hit_result.on_third_hit);
+                            }
+                        } else {
+                            self.add_effect(EffectData {
+                                expiry,
+                                unique_name,
+                                result: EffectResult::ThreeHit(three_hit_result),
+                            });
+                        }
+                    }
+                    _ => self.add_effect(to_add),
+                }
+            } else {
+                self.add_effect(to_add);
+            }
+        } else {
+            self.add_effect(to_add);
+        }
     }
 
     pub fn execute_combo(

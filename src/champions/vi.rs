@@ -361,7 +361,11 @@ mod tests {
             damage[1], damage[0],
             "first two autos should do equal damage"
         );
-        assert!(damage[2] > damage[1], "third hit does bonus damage");
+        assert!(
+            damage[2] > damage[1],
+            "third hit does bonus damage {:#?}",
+            damage
+        );
         assert!(
             damage[4] > damage[1],
             "fourth hit does more damage than first/second"

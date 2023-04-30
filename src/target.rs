@@ -30,7 +30,7 @@ pub struct EffectData {
 
 #[derive(Debug)]
 pub struct ThreeHit {
-    hit_count: u8,
+    pub hit_count: u8,
     pub on_third_hit: Box<EffectData>,
 }
 
@@ -48,49 +48,12 @@ impl ThreeHit {
             hit_count: 0,
             on_third_hit: Box::new(resulting_effect),
         };
-        let mut three_hit_data = EffectData {
+        let three_hit_data = EffectData {
             unique_name: three_hit_name,
             expiry: TIME.with(|time| *time.borrow() + ttl),
             result: EffectResult::ThreeHit(three_hit_effect),
         };
-
-        if let Some(index) = champion
-            .effects
-            .iter()
-            .position(|candidate| &three_hit_data == candidate)
-        {
-            let removed = champion.effects.remove(index);
-            if let EffectResult::ThreeHit(_) = &removed.result {
-                three_hit_data = removed;
-            }
-        }
-
-        if let EffectData {
-            result: EffectResult::ThreeHit(mut three_hit_result),
-            expiry,
-            unique_name,
-        } = three_hit_data
-        {
-            three_hit_result.hit_count += 1;
-            if three_hit_result.hit_count >= 3 {
-                if let EffectResult::AbilityEffect {
-                    attacker,
-                    name,
-                    data,
-                } = three_hit_result.on_third_hit.result
-                {
-                    Champion::execute_ability(attacker, name, champion, &data);
-                } else {
-                    champion.upsert_effect(*three_hit_result.on_third_hit);
-                }
-            } else {
-                champion.add_effect(EffectData {
-                    expiry,
-                    unique_name,
-                    result: EffectResult::ThreeHit(three_hit_result),
-                });
-            }
-        }
+        champion.upsert_effect(three_hit_data);
     }
 }
 
