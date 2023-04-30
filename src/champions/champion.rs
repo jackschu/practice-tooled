@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    mem,
     rc::{Rc, Weak},
 };
 
@@ -101,10 +100,11 @@ impl Champion {
     }
 
     pub fn upsert_effect(&mut self, effect: EffectData) {
-        if let Some(index) = self.effects.iter().position(|candidate| {
-            candidate.unique_name == effect.unique_name
-                && mem::discriminant(&candidate.result) == mem::discriminant(&effect.result)
-        }) {
+        if let Some(index) = self
+            .effects
+            .iter()
+            .position(|candidate| candidate == &effect)
+        {
             self.effects.remove(index);
         };
         self.add_effect(effect);

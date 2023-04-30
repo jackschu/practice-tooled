@@ -1,4 +1,4 @@
-use std::{fmt, rc::Weak};
+use std::{fmt, mem, rc::Weak};
 
 use crate::{
     armor_reducer::ArmorReducer,
@@ -34,42 +34,62 @@ pub struct ThreeHit {
     pub on_third_hit: Box<EffectData>,
 }
 
+impl PartialEq for EffectData {
+    fn eq(&self, other: &Self) -> bool {
+        self.unique_name == other.unique_name
+            && mem::discriminant(&self.result) == mem::discriminant(&other.result)
+    }
+}
+
 impl ThreeHit {
-    pub fn upsert_to_champ(champion: &mut Champion, effect: EffectData, ttl: f64) {
-        let mut maybe_found: Option<ThreeHit> = None;
-        if let Some(index) = champion.effects.iter().position(|candidate| {
-            candidate.unique_name == effect.unique_name
-                && matches!(candidate.result, EffectResult::ThreeHit(_))
-        }) {
-            if let EffectResult::ThreeHit(out) = champion.effects.remove(index).result {
-                maybe_found = Some(out);
+    pub fn upsert_to_champ(champion: &mut Champion, resulting_effect: EffectData, ttl: f64) {
+        let three_hit_name = resulting_effect.unique_name.clone();
+        let three_hit_effect = ThreeHit {
+            hit_count: 0,
+            on_third_hit: Box::new(resulting_effect),
+        };
+        let mut three_hit_data = EffectData {
+            unique_name: three_hit_name,
+            expiry: TIME.with(|time| *time.borrow() + ttl),
+            result: EffectResult::ThreeHit(three_hit_effect),
+        };
+
+        if let Some(index) = champion
+            .effects
+            .iter()
+            .position(|candidate| &three_hit_data == candidate)
+        {
+            let removed = champion.effects.remove(index);
+            if let EffectResult::ThreeHit(_) = &removed.result {
+                three_hit_data = removed;
             }
         }
-        let three_hit_name = effect.unique_name.clone();
 
-        let mut found = maybe_found.unwrap_or(ThreeHit {
-            hit_count: 0,
-            //trigger_type,
-            on_third_hit: Box::new(effect),
-        });
-        found.hit_count += 1;
-        if found.hit_count >= 3 {
-            if let EffectResult::AbilityEffect {
-                attacker,
-                name,
-                data,
-            } = found.on_third_hit.result
-            {
-                Champion::execute_ability(attacker, name, champion, &data);
+        if let EffectData {
+            result: EffectResult::ThreeHit(mut three_hit_result),
+            expiry,
+            unique_name,
+        } = three_hit_data
+        {
+            three_hit_result.hit_count += 1;
+            if three_hit_result.hit_count >= 3 {
+                if let EffectResult::AbilityEffect {
+                    attacker,
+                    name,
+                    data,
+                } = three_hit_result.on_third_hit.result
+                {
+                    Champion::execute_ability(attacker, name, champion, &data);
+                } else {
+                    champion.upsert_effect(*three_hit_result.on_third_hit);
+                }
             } else {
-                champion.upsert_effect(*found.on_third_hit);
+                champion.add_effect(EffectData {
+                    expiry,
+                    unique_name,
+                    result: EffectResult::ThreeHit(three_hit_result),
+                });
             }
-        } else {
-            champion.add_effect(EffectData {
-                unique_name: three_hit_name,
-                expiry: TIME.with(|time| *time.borrow() + ttl),
-                result: EffectResult::ThreeHit(found),
-            });
         }
     }
 }
