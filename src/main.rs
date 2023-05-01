@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use practice_tooled::{
     attack::{self},
@@ -39,12 +39,12 @@ fn example_vi_ult_combo() {
     let mut vi_data = Vi::new();
 
     let vi_closures = vi_data.get_name_closures();
-    let mut vi = Rc::new(Champion::new(
+    let vi = Rc::new(RefCell::new(Champion::new(
         Vi::NAME.to_string(),
         level,
         [0, 0, 2, 0],
         vi_closures,
-    ));
+    )));
 
     let item_names = ["Serrated Dirk", "Long Sword", "Last Whisper"];
     for item_name in item_names {
@@ -57,12 +57,12 @@ fn example_vi_ult_combo() {
                 .collect();
         concrete_item_effects
             .iter()
-            .for_each(|v| v.apply_to_champ(Rc::get_mut(&mut vi).unwrap()));
-        item.modify_champion_stats(&mut Rc::get_mut(&mut vi).unwrap().stats);
+            .for_each(|v| v.apply_to_champ(&mut *vi.borrow_mut()));
+        item.modify_champion_stats(&mut vi.borrow_mut().stats);
     }
 
-    let ranks = vi.ranks.clone();
-    vi.execute_combo(Vi::ult_combo(ranks), &mut leblanc);
+    let ranks = vi.borrow().ranks.clone();
+    Champion::execute_combo(vi, Vi::ult_combo(ranks), &mut leblanc);
 
     println!(
         "Full combo deals {:.2} out of {:.2} hp against a target with {} armor",

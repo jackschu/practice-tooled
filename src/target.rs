@@ -1,4 +1,4 @@
-use std::{fmt, mem, rc::Weak};
+use std::{cell::RefCell, fmt, mem, rc::Weak};
 
 use crate::{
     armor_reducer::ArmorReducer,
@@ -65,7 +65,7 @@ impl ThreeHit {
 }
 
 pub struct AbilityEffect {
-    pub attacker: Weak<Champion>,
+    pub attacker: Weak<RefCell<Champion>>,
     pub name: ChampionAbilites,
     pub data: CastingData,
 }

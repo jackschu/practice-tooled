@@ -1,4 +1,5 @@
 use std::{
+    cell::RefCell,
     collections::HashMap,
     rc::{Rc, Weak},
 };
@@ -47,8 +48,10 @@ impl CastingData {
     }
 }
 pub struct NamedClosures {
-    pub data:
-        HashMap<ChampionAbilites, Box<dyn Fn(&mut Champion, Rc<Champion>, &CastingData) -> ()>>,
+    pub data: HashMap<
+        ChampionAbilites,
+        Box<dyn Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) -> ()>,
+    >,
 }
 
 impl Champion {
@@ -159,24 +162,24 @@ impl Champion {
     }
 
     pub fn execute_combo(
-        self: Rc<Self>,
+        attacker: Rc<RefCell<Self>>,
         combo: Vec<(ChampionAbilites, CastingData)>,
         target: &mut Champion,
     ) {
         for (name, data) in combo {
-            Self::execute_ability(Rc::downgrade(&self), &name, target, &data);
+            Self::execute_ability(Rc::downgrade(&attacker), &name, target, &data);
         }
     }
 
     pub fn execute_ability(
-        attacker_ref: Weak<Self>,
+        attacker_ref: Weak<RefCell<Self>>,
         name: &ChampionAbilites,
         target: &mut Champion,
         casting_data: &CastingData,
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
         if name == &ChampionAbilites::AUTO {
-            attacker.valid_effects().for_each(|effect| {
+            attacker.borrow().valid_effects().for_each(|effect| {
                 if let EffectResult::EmpowerNextAttack(ability) = &effect.result {
                     Champion::execute_ability(
                         Weak::clone(&ability.attacker),
@@ -186,13 +189,14 @@ impl Champion {
                     );
                 }
             });
-            // Rc::get_mut(&mut attacker)
-            //     .unwrap()
-            //     .effects
-            //     .retain(|effect| matches!(effect.result, EffectResult::EmpowerNextAttack(_)));
+            attacker
+                .borrow_mut()
+                .effects
+                .retain(|effect| matches!(effect.result, EffectResult::EmpowerNextAttack(_)));
         }
 
-        let func = attacker.abilities.data.get(&name).unwrap();
+        let binding = attacker.borrow();
+        let func = binding.abilities.data.get(&name).unwrap();
 
         func(target, Rc::clone(&attacker), casting_data);
         return Some(());

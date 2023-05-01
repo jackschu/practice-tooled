@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     armor_reducer::ArmorReducer,
@@ -74,7 +74,7 @@ impl Vi {
     pub fn get_name_closures(&mut self) -> NamedClosures {
         let mut map: HashMap<
             ChampionAbilites,
-            Box<dyn Fn(&mut Champion, Rc<Champion>, &CastingData) -> ()>,
+            Box<dyn Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) -> ()>,
         > = HashMap::new();
         map.entry(ChampionAbilites::Q)
             .or_insert(Box::new(Vi::ability_q(self.q_data)));
@@ -93,22 +93,24 @@ impl Vi {
 
     pub fn ability_q(
         q_data: AbiltyDamageInfo,
-    ) -> impl Fn(&mut Champion, Rc<Champion>, &CastingData) {
-        return move |target: &mut Champion, attacker: Rc<Champion>, casting_data: &CastingData| {
+    ) -> impl Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) {
+        return move |target: &mut Champion,
+                     attacker: Rc<RefCell<Champion>>,
+                     casting_data: &CastingData| {
             const MAX_SCALE: f64 = 1.0;
             let rank = casting_data.rank;
             let percent_damage = MAX_SCALE.min(casting_data.charge * 0.10 / 0.125) + 1.0;
-            let base_ad = attacker.get_base_ad();
-            let bonus_ad = attacker.get_bonus_ad();
+            let base_ad = attacker.borrow().get_base_ad();
+            let bonus_ad = attacker.borrow().get_bonus_ad();
 
             let mut raw_damage = q_data.to_damage_amount(rank, base_ad, bonus_ad);
             raw_damage *= percent_damage;
-            target.receive_damage(&attacker, raw_damage);
+            target.receive_damage(&attacker.borrow(), raw_damage);
             Vi::apply_w_effect(target, attacker);
         };
     }
 
-    pub fn apply_w_effect(target: &mut Champion, attacker: Rc<Champion>) {
+    pub fn apply_w_effect(target: &mut Champion, attacker: Rc<RefCell<Champion>>) {
         ThreeHit::upsert_to_champ(
             target,
             ThreeHitApplyInfo {
@@ -117,7 +119,7 @@ impl Vi {
                     attacker: Rc::downgrade(&attacker),
                     name: ChampionAbilites::W,
                     data: CastingData {
-                        rank: attacker.ranks[1],
+                        rank: attacker.borrow().ranks[1],
                         ..Default::default()
                     },
                 })),
@@ -141,59 +143,71 @@ impl Vi {
 
     pub fn ability_w(
         w_data: AbiltyDamageInfo,
-    ) -> impl Fn(&mut Champion, Rc<Champion>, &CastingData) {
-        return move |target: &mut Champion, attacker: Rc<Champion>, casting_data: &CastingData| {
-            let bonus_ad = attacker.get_bonus_ad();
+    ) -> impl Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) {
+        return move |target: &mut Champion,
+                     attacker: Rc<RefCell<Champion>>,
+                     casting_data: &CastingData| {
+            let bonus_ad = attacker.borrow().get_bonus_ad();
             let rank = casting_data.rank;
             let percent_health_dmg = 0.01 * w_data.target_max_health_ratio[rank as usize]
                 + 0.01 * w_data.bonus_ad_ratio * bonus_ad;
             let raw_damage = percent_health_dmg * target.get_max_health();
-            target.receive_damage(&attacker, raw_damage);
+            target.receive_damage(&attacker.borrow(), raw_damage);
         };
     }
 
     pub fn ability_e(
         e_data: AbiltyDamageInfo,
-    ) -> impl Fn(&mut Champion, Rc<Champion>, &CastingData) {
-        return move |target: &mut Champion, attacker: Rc<Champion>, casting_data: &CastingData| {
+    ) -> impl Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) {
+        return move |target: &mut Champion,
+                     attacker: Rc<RefCell<Champion>>,
+                     casting_data: &CastingData| {
             let rank = casting_data.rank;
-            let bonus_ad = attacker.get_bonus_ad();
-            let base_ad = attacker.get_base_ad();
+            let bonus_ad = attacker.borrow().get_bonus_ad();
+            let base_ad = attacker.borrow().get_base_ad();
             let e_dmg = e_data.to_damage_amount(rank, base_ad, bonus_ad);
             let attack = BasicAttack::new(e_dmg, 0.0);
-            let raw_damage =
-                attack.get_damage_to_target(&VitalityData::default(), &attacker.crit_info, None);
-            target.receive_damage(&attacker, raw_damage);
+            let raw_damage = attack.get_damage_to_target(
+                &VitalityData::default(),
+                &attacker.borrow().crit_info,
+                None,
+            );
+            target.receive_damage(&attacker.borrow(), raw_damage);
             Vi::apply_w_effect(target, attacker);
         };
     }
 
     pub fn ability_r(
         r_data: AbiltyDamageInfo,
-    ) -> impl Fn(&mut Champion, Rc<Champion>, &CastingData) {
-        return move |target: &mut Champion, attacker: Rc<Champion>, casting_data: &CastingData| {
+    ) -> impl Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) {
+        return move |target: &mut Champion,
+                     attacker: Rc<RefCell<Champion>>,
+                     casting_data: &CastingData| {
             let rank = casting_data.rank;
-            let bonus_ad = attacker.get_bonus_ad();
-            let base_ad = attacker.get_base_ad();
+            let bonus_ad = attacker.borrow().get_bonus_ad();
+            let base_ad = attacker.borrow().get_base_ad();
 
             let raw_damage = r_data.to_damage_amount(rank, base_ad, bonus_ad);
 
-            target.receive_damage(&attacker, raw_damage)
+            target.receive_damage(&attacker.borrow(), raw_damage)
         };
     }
 
-    pub fn auto_attack() -> impl Fn(&mut Champion, Rc<Champion>, &CastingData) {
+    pub fn auto_attack() -> impl Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) {
         return move |target: &mut Champion,
-                     attacker: Rc<Champion>,
+                     attacker: Rc<RefCell<Champion>>,
                      _casting_data: &CastingData| {
-            let bonus_ad = attacker.get_bonus_ad();
-            let base_ad = attacker.get_base_ad();
+            let bonus_ad = attacker.borrow().get_bonus_ad();
+            let base_ad = attacker.borrow().get_base_ad();
 
             let attack = BasicAttack::new(base_ad, bonus_ad);
 
-            let raw_damage =
-                attack.get_damage_to_target(&VitalityData::default(), &attacker.crit_info, None);
-            target.receive_damage(&attacker, raw_damage);
+            let raw_damage = attack.get_damage_to_target(
+                &VitalityData::default(),
+                &attacker.borrow().crit_info,
+                None,
+            );
+            target.receive_damage(&attacker.borrow(), raw_damage);
             Vi::apply_w_effect(target, attacker);
         };
     }
@@ -271,7 +285,7 @@ mod tests {
         let target = &mut Champion::new_dummy();
 
         Champion::execute_ability(
-            Rc::downgrade(&Rc::new(vi)),
+            Rc::downgrade(&Rc::new(RefCell::new(vi))),
             &ChampionAbilites::Q,
             target,
             &CastingData { rank, charge },
@@ -290,7 +304,7 @@ mod tests {
         vi.stats.bonus_attack_damage += 40.0;
         let target = &mut Champion::new_dummy();
         let ranks = vi.ranks;
-        Champion::execute_combo(Rc::new(vi), Vi::ult_combo(ranks), target);
+        Champion::execute_combo(Rc::new(RefCell::new(vi)), Vi::ult_combo(ranks), target);
         assert_eq!(965, target.get_missing_health().round() as u32);
         // 905 dirk last whisper 30 armor
     }
@@ -320,7 +334,7 @@ mod tests {
 
         let target = &mut Champion::new_dummy_with_resist(30.0, 0.0);
         let ranks = vi.ranks;
-        Champion::execute_combo(Rc::new(vi), Vi::ult_combo(ranks), target);
+        Champion::execute_combo(Rc::new(RefCell::new(vi)), Vi::ult_combo(ranks), target);
 
         assert_eq!(905, target.get_missing_health().round() as u32);
     }
@@ -331,12 +345,12 @@ mod tests {
 
         let mut vi_data = Vi::new();
         let vi_closures = vi_data.get_name_closures();
-        let vi = Rc::new(Champion::new(
+        let vi = Rc::new(RefCell::new(Champion::new(
             Vi::NAME.to_string(),
             6,
             [0, 0, 2, 0],
             vi_closures,
-        ));
+        )));
 
         const HITS: usize = 9;
         let mut missing_healths: [f64; HITS] = [0.0; HITS];
