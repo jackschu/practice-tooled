@@ -272,7 +272,7 @@ mod tests {
 
         Champion::execute_ability(
             Rc::downgrade(&Rc::new(vi)),
-            ChampionAbilites::Q,
+            &ChampionAbilites::Q,
             target,
             &CastingData { rank, charge },
         );
@@ -343,7 +343,7 @@ mod tests {
         for i in 0..HITS {
             Champion::execute_ability(
                 Rc::downgrade(&vi),
-                ChampionAbilites::AUTO,
+                &ChampionAbilites::AUTO,
                 target,
                 &CastingData {
                     ..Default::default()

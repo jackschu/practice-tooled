@@ -28,7 +28,7 @@ pub struct Champion {
     pub current_health: f64,
     pub abilities: NamedClosures,
     pub crit_info: Option<(CritAdjuster, CritCalculation)>,
-    pub effects: Vec<EffectData>,
+    effects: Vec<EffectData>,
     pub ranks: [u8; 4],
 }
 
@@ -135,7 +135,7 @@ impl Champion {
                         data,
                     }) = *three_hit_result.on_third_hit.result
                     {
-                        Champion::execute_ability(attacker, name, self, &data);
+                        Champion::execute_ability(attacker, &name, self, &data);
                         return None;
                     } else {
                         self.upsert_effect(EffectData {
@@ -164,21 +164,38 @@ impl Champion {
         target: &mut Champion,
     ) {
         for (name, data) in combo {
-            Self::execute_ability(Rc::downgrade(&self), name, target, &data)
+            Self::execute_ability(Rc::downgrade(&self), &name, target, &data);
         }
     }
 
     pub fn execute_ability(
         attacker_ref: Weak<Self>,
-        name: ChampionAbilites,
+        name: &ChampionAbilites,
         target: &mut Champion,
         casting_data: &CastingData,
-    ) {
-        let maybe_attacker = attacker_ref.upgrade();
-        if let Some(attacker) = maybe_attacker {
-            let func = attacker.abilities.data.get(&name).unwrap();
-            func(target, Rc::clone(&attacker), casting_data);
+    ) -> Option<()> {
+        let attacker = attacker_ref.upgrade()?;
+        if name == &ChampionAbilites::AUTO {
+            attacker.valid_effects().for_each(|effect| {
+                if let EffectResult::EmpowerNextAttack(ability) = &effect.result {
+                    Champion::execute_ability(
+                        Weak::clone(&ability.attacker),
+                        &ability.name,
+                        target,
+                        &ability.data,
+                    );
+                }
+            });
+            // Rc::get_mut(&mut attacker)
+            //     .unwrap()
+            //     .effects
+            //     .retain(|effect| matches!(effect.result, EffectResult::EmpowerNextAttack(_)));
         }
+
+        let func = attacker.abilities.data.get(&name).unwrap();
+
+        func(target, Rc::clone(&attacker), casting_data);
+        return Some(());
     }
 
     pub fn get_base_armor(&self) -> f64 {
@@ -218,9 +235,7 @@ impl Champion {
 
     pub fn receive_damage(&mut self, attacker: &Champion, damage: f64) {
         let mut armor_reducer: ArmorReducer = (&attacker.stats, attacker.level).into();
-        self.effects
-            .iter()
-            .filter(|effect| TIME.with(|time| effect.expiry >= *time.borrow()))
+        self.valid_effects()
             .filter_map(|effect| match &effect.result {
                 EffectResult::ArmorReducer(reducer) => Some(reducer),
                 _ => None,
@@ -232,6 +247,12 @@ impl Champion {
         let final_damage = resist_damage(damage, effective_armor);
         let health = &mut self.current_health;
         *health = *health - final_damage;
+    }
+
+    pub fn valid_effects(&self) -> impl Iterator<Item = &EffectData> {
+        self.effects
+            .iter()
+            .filter(|effect| TIME.with(|time| effect.expiry >= *time.borrow()))
     }
 }
 
