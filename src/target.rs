@@ -64,6 +64,10 @@ impl ThreeHit {
     }
 }
 
+pub enum EmpowerState {
+    Cooldown,
+    Active(AbilityEffect, f64),
+}
 pub struct AbilityEffect {
     pub attacker: Weak<RefCell<Champion>>,
     pub name: ChampionAbilites,
@@ -72,7 +76,7 @@ pub struct AbilityEffect {
 pub enum EffectResult {
     ThreeHit(ThreeHit),
     ArmorReducer(ArmorReducer),
-    EmpowerNextAttack(AbilityEffect),
+    EmpowerNextAttack(EmpowerState),
     AbilityEffect(AbilityEffect),
 }
 
@@ -86,11 +90,7 @@ impl fmt::Debug for EffectResult {
                 name,
                 data,
             }) => write!(f, "AbilityEffect {:?} {:?}", name, data),
-            Self::EmpowerNextAttack(AbilityEffect {
-                attacker: _,
-                name,
-                data,
-            }) => write!(f, "EmpowerNextAttack {:?} {:?}", name, data),
+            Self::EmpowerNextAttack { .. } => write!(f, "EmpowerNextAttack"),
         }
     }
 }

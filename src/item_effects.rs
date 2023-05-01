@@ -58,6 +58,12 @@ impl ChampionApplyable for UnhandledItemEffect {
 impl From<&UnknownItemEffect> for ConcreteItemEffect {
     fn from(incoming: &UnknownItemEffect) -> ConcreteItemEffect {
         return match incoming.name.as_str() {
+            "Nightstalker" => ConcreteItemEffect::StatItemEffect(StatItemEffect {
+                stats: Box::new(WikiItemStatDeltas {
+                    // TODO Replace this with an on hit effect
+                    ..Default::default()
+                }),
+            }),
             "Gouge" => ConcreteItemEffect::StatItemEffect(StatItemEffect {
                 stats: Box::new(WikiItemStatDeltas {
                     lethality: Some(10.0),

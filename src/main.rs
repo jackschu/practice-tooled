@@ -46,7 +46,7 @@ fn example_vi_ult_combo() {
         vi_closures,
     )));
 
-    let item_names = ["Serrated Dirk", "Long Sword", "Last Whisper"];
+    let item_names = ["Duskblade of Draktharr"];
     for item_name in item_names {
         let item = load_wiki_item_stats(item_name.to_string());
 

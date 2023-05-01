@@ -9,7 +9,7 @@ use crate::{
     attack::{BasicAttack, CritAdjuster, CritCalculation},
     core::{resist_damage, stat_at_level},
     load_champion::{load_champion_stats, ChampionStats},
-    target::{AbilityEffect, EffectData, EffectResult, Target, VitalityData},
+    target::{AbilityEffect, EffectData, EffectResult, EmpowerState, Target, VitalityData},
     time_manager::TIME,
 };
 
@@ -179,20 +179,23 @@ impl Champion {
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
         if name == &ChampionAbilites::AUTO {
-            attacker.borrow().valid_effects().for_each(|effect| {
-                if let EffectResult::EmpowerNextAttack(ability) = &effect.result {
-                    Champion::execute_ability(
-                        Weak::clone(&ability.attacker),
-                        &ability.name,
-                        target,
-                        &ability.data,
-                    );
-                }
-            });
             attacker
                 .borrow_mut()
-                .effects
-                .retain(|effect| matches!(effect.result, EffectResult::EmpowerNextAttack(_)));
+                .valid_effects_mut()
+                .for_each(|effect| {
+                    if let EffectResult::EmpowerNextAttack(result) = &mut effect.result {
+                        if let EmpowerState::Active(ability, cd) = &result {
+                            Champion::execute_ability(
+                                Weak::clone(&ability.attacker),
+                                &ability.name,
+                                target,
+                                &ability.data,
+                            );
+                            effect.expiry = TIME.with(|time| *time.borrow() + cd);
+                        }
+                        effect.result = EffectResult::EmpowerNextAttack(EmpowerState::Cooldown);
+                    }
+                });
         }
 
         let binding = attacker.borrow();
@@ -256,6 +259,11 @@ impl Champion {
     pub fn valid_effects(&self) -> impl Iterator<Item = &EffectData> {
         self.effects
             .iter()
+            .filter(|effect| TIME.with(|time| effect.expiry >= *time.borrow()))
+    }
+    pub fn valid_effects_mut(&mut self) -> impl Iterator<Item = &mut EffectData> {
+        self.effects
+            .iter_mut()
             .filter(|effect| TIME.with(|time| effect.expiry >= *time.borrow()))
     }
 }
