@@ -64,14 +64,16 @@ impl ThreeHit {
     }
 }
 
+pub struct AbilityEffect {
+    pub attacker: Weak<Champion>,
+    pub name: ChampionAbilites,
+    pub data: CastingData,
+}
 pub enum EffectResult {
     ThreeHit(ThreeHit),
     ArmorReducer(ArmorReducer),
-    AbilityEffect {
-        attacker: Weak<Champion>,
-        name: ChampionAbilites,
-        data: CastingData,
-    },
+    EmpowerNextAttack(AbilityEffect),
+    AbilityEffect(AbilityEffect),
 }
 
 impl fmt::Debug for EffectResult {
@@ -79,11 +81,16 @@ impl fmt::Debug for EffectResult {
         match self {
             Self::ThreeHit(inside) => write!(f, "{:?}", inside),
             Self::ArmorReducer(inside) => write!(f, "{:?}", inside),
-            Self::AbilityEffect {
+            Self::AbilityEffect(AbilityEffect {
                 attacker: _,
                 name,
                 data,
-            } => write!(f, "{:?} {:?}", name, data),
+            }) => write!(f, "AbilityEffect {:?} {:?}", name, data),
+            Self::EmpowerNextAttack(AbilityEffect {
+                attacker: _,
+                name,
+                data,
+            }) => write!(f, "EmpowerNextAttack {:?} {:?}", name, data),
         }
     }
 }

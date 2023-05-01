@@ -8,7 +8,7 @@ use crate::{
     attack::{BasicAttack, CritAdjuster, CritCalculation},
     core::{resist_damage, stat_at_level},
     load_champion::{load_champion_stats, ChampionStats},
-    target::{EffectData, EffectResult, Target, VitalityData},
+    target::{AbilityEffect, EffectData, EffectResult, Target, VitalityData},
     time_manager::TIME,
 };
 
@@ -129,11 +129,11 @@ impl Champion {
             } => {
                 three_hit_result.hit_count += 1;
                 if three_hit_result.hit_count >= 2 {
-                    if let EffectResult::AbilityEffect {
+                    if let EffectResult::AbilityEffect(AbilityEffect {
                         attacker,
                         name,
                         data,
-                    } = *three_hit_result.on_third_hit.result
+                    }) = *three_hit_result.on_third_hit.result
                     {
                         Champion::execute_ability(attacker, name, self, &data);
                         return None;

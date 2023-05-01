@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use crate::{
     armor_reducer::ArmorReducer,
     attack::BasicAttack,
-    target::{EffectResult, ThreeHit, ThreeHitApplyInfo, VitalityData},
+    target::{AbilityEffect, EffectResult, ThreeHit, ThreeHitApplyInfo, VitalityData},
 };
 
 use super::champion::{CastingData, Champion, ChampionAbilites, NamedClosures};
@@ -113,14 +113,14 @@ impl Vi {
             target,
             ThreeHitApplyInfo {
                 unique_name: "Denting Blows Damage".to_string(),
-                result: Box::new(EffectResult::AbilityEffect {
+                result: Box::new(EffectResult::AbilityEffect(AbilityEffect {
                     attacker: Rc::downgrade(&attacker),
                     name: ChampionAbilites::W,
                     data: CastingData {
                         rank: attacker.ranks[1],
                         ..Default::default()
                     },
-                }),
+                })),
                 ttl: 0.0,
             },
             4.0,
