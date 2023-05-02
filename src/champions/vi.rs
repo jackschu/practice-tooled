@@ -3,6 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::{
     armor_reducer::ArmorReducer,
     attack::BasicAttack,
+    item_effects::STATIC_ABILITIES,
     target::{AbilityEffect, EffectResult, ThreeHit, ThreeHitApplyInfo, VitalityData},
 };
 
@@ -197,17 +198,10 @@ impl Vi {
         return move |target: &mut Champion,
                      attacker: Rc<RefCell<Champion>>,
                      _casting_data: &CastingData| {
-            let bonus_ad = attacker.borrow().get_bonus_ad();
-            let base_ad = attacker.borrow().get_base_ad();
-
-            let attack = BasicAttack::new(base_ad, bonus_ad);
-
-            let raw_damage = attack.get_damage_to_target(
-                &VitalityData::default(),
-                &attacker.borrow().crit_info,
-                None,
-            );
-            target.receive_damage(&attacker.borrow(), raw_damage);
+            STATIC_ABILITIES.with(|abilities| {
+                let func = abilities.get(&AbilityName::AUTO).unwrap();
+                func(target, Rc::clone(&attacker), _casting_data);
+            });
             Vi::apply_w_effect(target, attacker);
         };
     }

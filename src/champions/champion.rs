@@ -181,6 +181,64 @@ impl Champion {
         }
     }
 
+    fn process_on_auto_effects(
+        attacker_ref: Weak<RefCell<Self>>,
+        target: &mut Champion,
+    ) -> Option<()> {
+        let attacker = attacker_ref.upgrade()?;
+        let on_hit_effects: Vec<EffectData> = attacker
+            .borrow()
+            .on_hit_item_effects
+            .iter()
+            .map(|on_hit| EffectData {
+                unique_name: on_hit.name.to_string(),
+                // For now consider on hits to be never expiring
+                // could imagine implementing an expiration for something like sheen
+                expiry: f64::MAX,
+                result: EffectResult::EmpowerNextAttack(EmpowerState::Active(
+                    AbilityEffect {
+                        attacker: Weak::clone(&attacker_ref),
+                        name: on_hit.name.clone(),
+                        data: CastingData {
+                            ..Default::default()
+                        },
+                    },
+                    on_hit.cooldown,
+                )),
+            })
+            .collect();
+
+        on_hit_effects.into_iter().for_each(|effect| {
+            attacker.borrow_mut().upsert_effect(effect);
+        });
+
+        let to_cast: Vec<AbilityEffect> = attacker
+            .borrow_mut()
+            .valid_effects_mut()
+            .filter_map(|effect| {
+                let mut out: Option<AbilityEffect> = None;
+                if let EffectResult::EmpowerNextAttack(result) = &mut effect.result {
+                    if let EmpowerState::Active(ability, cd) = &result {
+                        effect.expiry = TIME.with(|time| *time.borrow() + cd);
+                        out = Some(ability.clone());
+                    }
+                    effect.result = EffectResult::EmpowerNextAttack(EmpowerState::Cooldown);
+                }
+                return out;
+            })
+            .collect();
+
+        to_cast.iter().for_each(|ability| {
+            Champion::execute_ability(
+                Weak::clone(&ability.attacker),
+                &ability.name,
+                target,
+                &ability.data,
+            );
+        });
+        return Some(());
+    }
+
     pub fn execute_ability(
         attacker_ref: Weak<RefCell<Self>>,
         name: &AbilityName,
@@ -189,56 +247,7 @@ impl Champion {
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
         if name == &AbilityName::AUTO {
-            let on_hit_effects: Vec<EffectData> = attacker
-                .borrow()
-                .on_hit_item_effects
-                .iter()
-                .map(|on_hit| EffectData {
-                    unique_name: on_hit.name.to_string(),
-                    // For now consider on hits to be never expiring
-                    // could imagine implementing an expiration for something like sheen
-                    expiry: f64::MAX,
-                    result: EffectResult::EmpowerNextAttack(EmpowerState::Active(
-                        AbilityEffect {
-                            attacker: Weak::clone(&attacker_ref),
-                            name: on_hit.name.clone(),
-                            data: CastingData {
-                                ..Default::default()
-                            },
-                        },
-                        on_hit.cooldown,
-                    )),
-                })
-                .collect();
-
-            on_hit_effects.into_iter().for_each(|effect| {
-                attacker.borrow_mut().upsert_effect(effect);
-            });
-
-            let to_cast: Vec<AbilityEffect> = attacker
-                .borrow_mut()
-                .valid_effects_mut()
-                .filter_map(|effect| {
-                    let mut out: Option<AbilityEffect> = None;
-                    if let EffectResult::EmpowerNextAttack(result) = &mut effect.result {
-                        if let EmpowerState::Active(ability, cd) = &result {
-                            effect.expiry = TIME.with(|time| *time.borrow() + cd);
-                            out = Some(ability.clone());
-                        }
-                        effect.result = EffectResult::EmpowerNextAttack(EmpowerState::Cooldown);
-                    }
-                    return out;
-                })
-                .collect();
-
-            to_cast.iter().for_each(|ability| {
-                Champion::execute_ability(
-                    Weak::clone(&ability.attacker),
-                    &ability.name,
-                    target,
-                    &ability.data,
-                );
-            });
+            Champion::process_on_auto_effects(Weak::clone(&attacker_ref), target);
         }
 
         let binding = attacker.borrow();

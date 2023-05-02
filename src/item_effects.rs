@@ -3,10 +3,30 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::rc::Rc;
 
+use crate::attack::BasicAttack;
 use crate::champions::champion::{AbilityName, CastingData, Champion};
+use crate::target::VitalityData;
 use crate::{load_champion::ChampionStatModifier, load_wiki_item::WikiItemStatDeltas};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
+
+fn get_auto_attack_ability() -> impl Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) -> () {
+    return move |target: &mut Champion,
+                 attacker: Rc<RefCell<Champion>>,
+                 _casting_data: &CastingData| {
+        let bonus_ad = attacker.borrow().get_bonus_ad();
+        let base_ad = attacker.borrow().get_base_ad();
+
+        let attack = BasicAttack::new(base_ad, bonus_ad);
+
+        let raw_damage = attack.get_damage_to_target(
+            &VitalityData::default(),
+            &attacker.borrow().crit_info,
+            None,
+        );
+        target.receive_damage(&attacker.borrow(), raw_damage);
+    };
+}
 
 thread_local! {
     pub static STATIC_ABILITIES: Lazy<
@@ -26,14 +46,16 @@ thread_local! {
             };
             let spellblade_sheen = move
                 |target: &mut Champion, attacker: Rc<RefCell<Champion>>, _casting_data: &CastingData| {
-                    let is_ranged = false;
                     let base_ad = attacker.borrow().get_base_ad();
                     target.receive_damage(&attacker.borrow(), base_ad);
             };
+            let auto_attack = get_auto_attack_ability();
             m.insert(AbilityName::NIGHTSTALKER,
                      Box::new(nightstalker));
             m.insert(AbilityName::SPELLBLADE_SHEEN,
                      Box::new(spellblade_sheen));
+            m.insert(AbilityName::AUTO,
+                     Box::new(auto_attack));
             return m;
         });
 }
