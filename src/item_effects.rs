@@ -24,8 +24,16 @@ thread_local! {
                     let flat_damage = if is_ranged {  75.0 } else {55.0};
                     target.receive_damage(&attacker.borrow(), flat_damage + bonus_ad * bonus_scaling);
             };
+            let spellblade_sheen = move
+                |target: &mut Champion, attacker: Rc<RefCell<Champion>>, _casting_data: &CastingData| {
+                    let is_ranged = false;
+                    let base_ad = attacker.borrow().get_base_ad();
+                    target.receive_damage(&attacker.borrow(), base_ad);
+            };
             m.insert(AbilityName::NIGHTSTALKER,
                      Box::new(nightstalker));
+            m.insert(AbilityName::SPELLBLADE_SHEEN,
+                     Box::new(spellblade_sheen));
             return m;
         });
 }

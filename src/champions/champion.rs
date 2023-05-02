@@ -23,6 +23,7 @@ pub enum AbilityName {
     R,
     AUTO,
     NIGHTSTALKER,
+    SPELLBLADE_SHEEN,
 }
 impl fmt::Display for AbilityName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
