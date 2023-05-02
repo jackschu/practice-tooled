@@ -79,7 +79,7 @@ impl Vi {
         > = HashMap::new();
         map.entry(AbilityName::Q)
             .or_insert(Box::new(Vi::ability_q(self.q_data)));
-        map.entry(AbilityName::W)
+        map.entry(AbilityName::WPassive)
             .or_insert(Box::new(Vi::ability_w(self.w_data)));
         map.entry(AbilityName::E)
             .or_insert(Box::new(Vi::ability_e(self.e_data)));
@@ -118,7 +118,7 @@ impl Vi {
                 unique_name: "Denting Blows Damage".to_string(),
                 result: Box::new(EffectResult::AbilityEffect(AbilityEffect {
                     attacker: Rc::downgrade(&attacker),
-                    name: AbilityName::W,
+                    name: AbilityName::WPassive,
                     data: CastingData {
                         rank: attacker.borrow().ranks[1],
                         ..Default::default()

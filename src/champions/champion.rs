@@ -9,7 +9,7 @@ use crate::{
     armor_reducer::ArmorReducer,
     attack::{BasicAttack, CritAdjuster, CritCalculation},
     core::{resist_damage, stat_at_level},
-    item_effects::{OnHit, STATIC_ABILITIES},
+    item_effects::{OnHit, OnHitActivation, STATIC_ABILITIES},
     load_champion::{load_champion_stats, ChampionStats},
     target::{AbilityEffect, EffectData, EffectResult, EmpowerState, Target, VitalityData},
     time_manager::TIME,
@@ -19,11 +19,12 @@ use crate::{
 pub enum AbilityName {
     Q,
     W,
+    WPassive,
     E,
     R,
     AUTO,
     NIGHTSTALKER,
-    SPELLBLADE_SHEEN,
+    SpellbladeSheen,
 }
 impl fmt::Display for AbilityName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -190,11 +191,12 @@ impl Champion {
             .borrow()
             .on_hit_item_effects
             .iter()
+            .filter(|effect| matches!(effect.mode, OnHitActivation::Auto))
             .map(|on_hit| EffectData {
                 unique_name: on_hit.name.to_string(),
                 // For now consider on hits to be never expiring
                 // could imagine implementing an expiration for something like sheen
-                expiry: f64::MAX,
+                expiry: TIME.with(|time| *time.borrow() + on_hit.ttl.unwrap_or(f64::INFINITY)),
                 result: EffectResult::EmpowerNextAttack(EmpowerState::Active(
                     AbilityEffect {
                         attacker: Weak::clone(&attacker_ref),

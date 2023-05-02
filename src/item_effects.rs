@@ -52,7 +52,7 @@ thread_local! {
             let auto_attack = get_auto_attack_ability();
             m.insert(AbilityName::NIGHTSTALKER,
                      Box::new(nightstalker));
-            m.insert(AbilityName::SPELLBLADE_SHEEN,
+            m.insert(AbilityName::SpellbladeSheen,
                      Box::new(spellblade_sheen));
             m.insert(AbilityName::AUTO,
                      Box::new(auto_attack));
@@ -81,8 +81,16 @@ pub struct UnhandledItemEffect {
 
 #[derive(Debug)]
 pub struct OnHit {
+    pub ttl: Option<f64>,
     pub name: AbilityName,
     pub cooldown: f64,
+    pub mode: OnHitActivation,
+}
+
+#[derive(Debug)]
+pub enum OnHitActivation {
+    Auto,
+    ActiveSpell,
 }
 
 #[derive(Debug)]
@@ -133,7 +141,9 @@ impl From<&UnknownItemEffect> for ConcreteItemEffect {
     fn from(incoming: &UnknownItemEffect) -> ConcreteItemEffect {
         return match incoming.name.as_str() {
             "Nightstalker" => ConcreteItemEffect::OnHit(OnHit {
+                ttl: None,
                 name: AbilityName::NIGHTSTALKER,
+                mode: OnHitActivation::Auto,
                 cooldown: 15.0,
             }),
             "Gouge" => ConcreteItemEffect::StatItemEffect(StatItemEffect {
