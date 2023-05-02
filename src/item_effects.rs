@@ -1,11 +1,12 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use crate::attack::BasicAttack;
 use crate::champions::champion::{AbilityName, CastingData, Champion};
-use crate::target::VitalityData;
+use crate::target::{AbilityEffect, EffectData, EffectResult, EmpowerState, VitalityData};
+use crate::time_manager::TIME;
 use crate::{load_champion::ChampionStatModifier, load_wiki_item::WikiItemStatDeltas};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -87,6 +88,25 @@ pub struct OnHit {
     pub mode: OnHitActivation,
 }
 
+impl From<(&OnHit, Weak<RefCell<Champion>>)> for EffectData {
+    fn from(tuple: (&OnHit, Weak<RefCell<Champion>>)) -> Self {
+        let (on_hit, attacker_ref) = tuple;
+        EffectData {
+            unique_name: on_hit.name.to_string(),
+            expiry: TIME.with(|time| *time.borrow() + on_hit.ttl.unwrap_or(f64::INFINITY)),
+            result: EffectResult::EmpowerNextAttack(EmpowerState::Active(
+                AbilityEffect {
+                    attacker: attacker_ref,
+                    name: on_hit.name.clone(),
+                    data: CastingData {
+                        ..Default::default()
+                    },
+                },
+                on_hit.cooldown,
+            )),
+        }
+    }
+}
 #[derive(Debug)]
 pub enum OnHitActivation {
     Auto,

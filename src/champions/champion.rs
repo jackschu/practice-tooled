@@ -182,33 +182,12 @@ impl Champion {
         }
     }
 
-    fn process_on_auto_effects(
+    fn process_on_hit_effects<'a>(
         attacker_ref: Weak<RefCell<Self>>,
         target: &mut Champion,
+        on_hit_effects: Vec<EffectData>,
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
-        let on_hit_effects: Vec<EffectData> = attacker
-            .borrow()
-            .on_hit_item_effects
-            .iter()
-            .filter(|effect| matches!(effect.mode, OnHitActivation::Auto))
-            .map(|on_hit| EffectData {
-                unique_name: on_hit.name.to_string(),
-                // For now consider on hits to be never expiring
-                // could imagine implementing an expiration for something like sheen
-                expiry: TIME.with(|time| *time.borrow() + on_hit.ttl.unwrap_or(f64::INFINITY)),
-                result: EffectResult::EmpowerNextAttack(EmpowerState::Active(
-                    AbilityEffect {
-                        attacker: Weak::clone(&attacker_ref),
-                        name: on_hit.name.clone(),
-                        data: CastingData {
-                            ..Default::default()
-                        },
-                    },
-                    on_hit.cooldown,
-                )),
-            })
-            .collect();
 
         on_hit_effects.into_iter().for_each(|effect| {
             attacker.borrow_mut().upsert_effect(effect);
@@ -248,8 +227,22 @@ impl Champion {
         casting_data: &CastingData,
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
-        if name == &AbilityName::AUTO {
-            Champion::process_on_auto_effects(Weak::clone(&attacker_ref), target);
+        match name {
+            AbilityName::AUTO => {
+                let on_auto_effects: Vec<EffectData> = attacker
+                    .borrow()
+                    .on_hit_item_effects
+                    .iter()
+                    .filter(|effect| matches!(effect.mode, OnHitActivation::Auto))
+                    .map(|on_hit| (on_hit, Weak::clone(&attacker_ref)).into())
+                    .collect();
+                Champion::process_on_hit_effects(
+                    Weak::clone(&attacker_ref),
+                    target,
+                    on_auto_effects,
+                );
+            }
+            _ => {}
         }
 
         let binding = attacker.borrow();
