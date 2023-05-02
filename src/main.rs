@@ -17,14 +17,23 @@ use practice_tooled::{
 fn main() {
     open_wiki_item_json();
     load_wiki_item_stats("Long Sword".to_string());
-    example_vi_ult_combo();
+    example_vi_ult_combo(Vec::from(["Duskblade of Draktharr"]));
+    example_vi_ult_combo(Vec::from(["Spear of Shojin"]));
+    example_vi_ult_combo(Vec::from(["Umbral Glaive"]));
+    example_vi_ult_combo(Vec::from(["Chempunk Chainsword"]));
+    example_vi_ult_combo(Vec::from([
+        "Serrated Dirk",
+        "B. F. Sword",
+        "Long Sword",
+        "Long Sword",
+    ]));
     // for _ in 1..1_000_000 {
     //     example_vi_ult_combo();
     // }
 }
 
 #[allow(dead_code)]
-fn example_vi_ult_combo() {
+fn example_vi_ult_combo(item_names: Vec<&str>) {
     let level = 6;
     let empty_closures = NamedClosures {
         data: HashMap::new(),
@@ -46,8 +55,7 @@ fn example_vi_ult_combo() {
         vi_closures,
     )));
 
-    let item_names = ["Duskblade of Draktharr"];
-    for item_name in item_names {
+    for item_name in &item_names {
         let item = load_wiki_item_stats(item_name.to_string());
 
         let concrete_item_effects: Vec<ConcreteItemEffect> =
@@ -56,16 +64,17 @@ fn example_vi_ult_combo() {
                 .map(|v| v.into())
                 .collect();
         concrete_item_effects
-            .iter()
+            .into_iter()
             .for_each(|v| v.apply_to_champ(&mut *vi.borrow_mut()));
         item.modify_champion_stats(&mut vi.borrow_mut().stats);
     }
 
     let ranks = vi.borrow().ranks.clone();
-    Champion::execute_combo(vi, Vi::ult_combo(ranks), &mut leblanc);
+    Champion::execute_combo(Rc::clone(&vi), Vi::ult_combo(ranks), &mut leblanc);
 
     println!(
-        "Full combo deals {:.2} out of {:.2} hp against a target with {} armor",
+        "Full combo with items \x1b[93m{:?}\x1b[0m deals \x1b[93m{:.2}\x1b[0m out of {:.2} hp against a target with {} armor",
+        item_names,
         leblanc.get_missing_health(),
         leblanc.get_max_health(),
         leblanc.get_base_armor() + leblanc.get_bonus_armor(),

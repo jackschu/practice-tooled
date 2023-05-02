@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -8,18 +9,25 @@ use crate::{
     armor_reducer::ArmorReducer,
     attack::{BasicAttack, CritAdjuster, CritCalculation},
     core::{resist_damage, stat_at_level},
+    item_effects::{OnHit, STATIC_ABILITIES},
     load_champion::{load_champion_stats, ChampionStats},
     target::{AbilityEffect, EffectData, EffectResult, EmpowerState, Target, VitalityData},
     time_manager::TIME,
 };
 
-#[derive(Eq, Hash, PartialEq, Debug)]
-pub enum ChampionAbilites {
+#[derive(Eq, Hash, PartialEq, Debug, Clone)]
+pub enum AbilityName {
     Q,
     W,
     E,
     R,
     AUTO,
+    NIGHTSTALKER,
+}
+impl fmt::Display for AbilityName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 pub struct Champion {
@@ -30,10 +38,11 @@ pub struct Champion {
     pub abilities: NamedClosures,
     pub crit_info: Option<(CritAdjuster, CritCalculation)>,
     effects: Vec<EffectData>,
+    pub on_hit_item_effects: Vec<OnHit>,
     pub ranks: [u8; 4],
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct CastingData {
     pub charge: f64,
     pub rank: u8,
@@ -48,10 +57,8 @@ impl CastingData {
     }
 }
 pub struct NamedClosures {
-    pub data: HashMap<
-        ChampionAbilites,
-        Box<dyn Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) -> ()>,
-    >,
+    pub data:
+        HashMap<AbilityName, Box<dyn Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) -> ()>>,
 }
 
 impl Champion {
@@ -72,6 +79,7 @@ impl Champion {
             abilities: NamedClosures {
                 data: HashMap::new(),
             },
+            on_hit_item_effects: Vec::new(),
             crit_info: None,
             effects: Vec::new(),
             ranks: [0, 0, 0, 0],
@@ -90,6 +98,7 @@ impl Champion {
             level,
             stats,
             initial_armor,
+            on_hit_item_effects: Vec::new(),
             current_health: health,
             abilities,
             crit_info: None,
@@ -163,7 +172,7 @@ impl Champion {
 
     pub fn execute_combo(
         attacker: Rc<RefCell<Self>>,
-        combo: Vec<(ChampionAbilites, CastingData)>,
+        combo: Vec<(AbilityName, CastingData)>,
         target: &mut Champion,
     ) {
         for (name, data) in combo {
@@ -173,35 +182,74 @@ impl Champion {
 
     pub fn execute_ability(
         attacker_ref: Weak<RefCell<Self>>,
-        name: &ChampionAbilites,
+        name: &AbilityName,
         target: &mut Champion,
         casting_data: &CastingData,
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
-        if name == &ChampionAbilites::AUTO {
-            attacker
+        if name == &AbilityName::AUTO {
+            let on_hit_effects: Vec<EffectData> = attacker
+                .borrow()
+                .on_hit_item_effects
+                .iter()
+                .map(|on_hit| EffectData {
+                    unique_name: on_hit.name.to_string(),
+                    // For now consider on hits to be never expiring
+                    // could imagine implementing an expiration for something like sheen
+                    expiry: f64::MAX,
+                    result: EffectResult::EmpowerNextAttack(EmpowerState::Active(
+                        AbilityEffect {
+                            attacker: Weak::clone(&attacker_ref),
+                            name: on_hit.name.clone(),
+                            data: CastingData {
+                                ..Default::default()
+                            },
+                        },
+                        on_hit.cooldown,
+                    )),
+                })
+                .collect();
+
+            on_hit_effects.into_iter().for_each(|effect| {
+                attacker.borrow_mut().upsert_effect(effect);
+            });
+
+            let to_cast: Vec<AbilityEffect> = attacker
                 .borrow_mut()
                 .valid_effects_mut()
-                .for_each(|effect| {
+                .filter_map(|effect| {
+                    let mut out: Option<AbilityEffect> = None;
                     if let EffectResult::EmpowerNextAttack(result) = &mut effect.result {
                         if let EmpowerState::Active(ability, cd) = &result {
-                            Champion::execute_ability(
-                                Weak::clone(&ability.attacker),
-                                &ability.name,
-                                target,
-                                &ability.data,
-                            );
                             effect.expiry = TIME.with(|time| *time.borrow() + cd);
+                            out = Some(ability.clone());
                         }
                         effect.result = EffectResult::EmpowerNextAttack(EmpowerState::Cooldown);
                     }
-                });
+                    return out;
+                })
+                .collect();
+
+            to_cast.iter().for_each(|ability| {
+                Champion::execute_ability(
+                    Weak::clone(&ability.attacker),
+                    &ability.name,
+                    target,
+                    &ability.data,
+                );
+            });
         }
 
         let binding = attacker.borrow();
-        let func = binding.abilities.data.get(&name).unwrap();
-
-        func(target, Rc::clone(&attacker), casting_data);
+        let maybe_func = binding.abilities.data.get(&name);
+        if let Some(func) = maybe_func {
+            func(target, Rc::clone(&attacker), casting_data);
+        } else {
+            STATIC_ABILITIES.with(|item_abilities| {
+                let func = item_abilities.get(&name).unwrap();
+                func(target, Rc::clone(&attacker), casting_data);
+            })
+        }
         return Some(());
     }
 

@@ -6,7 +6,7 @@ use crate::{
     target::{AbilityEffect, EffectResult, ThreeHit, ThreeHitApplyInfo, VitalityData},
 };
 
-use super::champion::{CastingData, Champion, ChampionAbilites, NamedClosures};
+use super::champion::{AbilityName, CastingData, Champion, NamedClosures};
 
 pub struct Vi {
     q_data: AbiltyDamageInfo,
@@ -73,19 +73,19 @@ impl Vi {
 
     pub fn get_name_closures(&mut self) -> NamedClosures {
         let mut map: HashMap<
-            ChampionAbilites,
+            AbilityName,
             Box<dyn Fn(&mut Champion, Rc<RefCell<Champion>>, &CastingData) -> ()>,
         > = HashMap::new();
-        map.entry(ChampionAbilites::Q)
+        map.entry(AbilityName::Q)
             .or_insert(Box::new(Vi::ability_q(self.q_data)));
-        map.entry(ChampionAbilites::W)
+        map.entry(AbilityName::W)
             .or_insert(Box::new(Vi::ability_w(self.w_data)));
-        map.entry(ChampionAbilites::E)
+        map.entry(AbilityName::E)
             .or_insert(Box::new(Vi::ability_e(self.e_data)));
-        map.entry(ChampionAbilites::R)
+        map.entry(AbilityName::R)
             .or_insert(Box::new(Vi::ability_r(self.r_data)));
 
-        map.entry(ChampionAbilites::AUTO)
+        map.entry(AbilityName::AUTO)
             .or_insert(Box::new(Vi::auto_attack()));
 
         return NamedClosures { data: map };
@@ -117,7 +117,7 @@ impl Vi {
                 unique_name: "Denting Blows Damage".to_string(),
                 result: Box::new(EffectResult::AbilityEffect(AbilityEffect {
                     attacker: Rc::downgrade(&attacker),
-                    name: ChampionAbilites::W,
+                    name: AbilityName::W,
                     data: CastingData {
                         rank: attacker.borrow().ranks[1],
                         ..Default::default()
@@ -212,21 +212,21 @@ impl Vi {
         };
     }
 
-    pub fn ult_combo(ranks: [u8; 4]) -> Vec<(ChampionAbilites, CastingData)> {
+    pub fn ult_combo(ranks: [u8; 4]) -> Vec<(AbilityName, CastingData)> {
         //q , auto , e , (w), ult, auto, e
         let mut out = Vec::new();
 
         out.push((
-            ChampionAbilites::Q,
+            AbilityName::Q,
             CastingData {
                 rank: ranks[0],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
             },
         ));
-        out.push((ChampionAbilites::AUTO, CastingData::new(0)));
+        out.push((AbilityName::AUTO, CastingData::new(0)));
 
         out.push((
-            ChampionAbilites::E,
+            AbilityName::E,
             CastingData {
                 rank: ranks[2],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
@@ -234,15 +234,15 @@ impl Vi {
         ));
 
         out.push((
-            ChampionAbilites::R,
+            AbilityName::R,
             CastingData {
                 rank: ranks[1],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
             },
         ));
-        out.push((ChampionAbilites::AUTO, CastingData::new(0)));
+        out.push((AbilityName::AUTO, CastingData::new(0)));
         out.push((
-            ChampionAbilites::E,
+            AbilityName::E,
             CastingData {
                 rank: ranks[2],
                 charge: Vi::Q_MAX_DAMAGE_CHARGE,
@@ -286,7 +286,7 @@ mod tests {
 
         Champion::execute_ability(
             Rc::downgrade(&Rc::new(RefCell::new(vi))),
-            &ChampionAbilites::Q,
+            &AbilityName::Q,
             target,
             &CastingData { rank, charge },
         );
@@ -327,7 +327,7 @@ mod tests {
                     .map(|v| v.into())
                     .collect();
             concrete_item_effects
-                .iter()
+                .into_iter()
                 .for_each(|v| v.apply_to_champ(&mut vi));
             item.modify_champion_stats(&mut vi.stats);
         }
@@ -357,7 +357,7 @@ mod tests {
         for i in 0..HITS {
             Champion::execute_ability(
                 Rc::downgrade(&vi),
-                &ChampionAbilites::AUTO,
+                &AbilityName::AUTO,
                 target,
                 &CastingData {
                     ..Default::default()

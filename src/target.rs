@@ -2,7 +2,7 @@ use std::{cell::RefCell, fmt, mem, rc::Weak};
 
 use crate::{
     armor_reducer::ArmorReducer,
-    champions::champion::{CastingData, Champion, ChampionAbilites},
+    champions::champion::{AbilityName, CastingData, Champion},
     core::stat_at_level,
     load_champion::ChampionStats,
     time_manager::TIME,
@@ -68,9 +68,11 @@ pub enum EmpowerState {
     Cooldown,
     Active(AbilityEffect, f64),
 }
+
+#[derive(Clone)]
 pub struct AbilityEffect {
     pub attacker: Weak<RefCell<Champion>>,
-    pub name: ChampionAbilites,
+    pub name: AbilityName,
     pub data: CastingData,
 }
 pub enum EffectResult {
@@ -90,7 +92,14 @@ impl fmt::Debug for EffectResult {
                 name,
                 data,
             }) => write!(f, "AbilityEffect {:?} {:?}", name, data),
-            Self::EmpowerNextAttack { .. } => write!(f, "EmpowerNextAttack"),
+            Self::EmpowerNextAttack(inside) => write!(
+                f,
+                "EmpowerNextAttack {:?}",
+                match inside {
+                    EmpowerState::Active { .. } => "Active",
+                    EmpowerState::Cooldown => "Cooldown",
+                }
+            ),
         }
     }
 }
