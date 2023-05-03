@@ -157,9 +157,22 @@ impl ChampionApplyable for UnhandledItemEffect {
     }
 }
 
-impl From<&UnknownItemEffect> for ConcreteItemEffect {
-    fn from(incoming: &UnknownItemEffect) -> ConcreteItemEffect {
+impl From<(&UnknownItemEffect, &str)> for ConcreteItemEffect {
+    fn from(tuple: (&UnknownItemEffect, &str)) -> ConcreteItemEffect {
+        let (incoming, item_name) = tuple;
         return match incoming.name.as_str() {
+            "Spellblade" => match item_name {
+                "Sheen" => ConcreteItemEffect::OnHit(OnHit {
+                    ttl: Some(10.0),
+                    name: AbilityName::SpellbladeSheen,
+                    mode: OnHitActivation::ActiveSpell,
+                    cooldown: 1.5,
+                }),
+                _ => ConcreteItemEffect::UnhandledItemEffect(UnhandledItemEffect {
+                    name: incoming.name.clone(),
+                    description: incoming.description.clone(),
+                }),
+            },
             "Nightstalker" => ConcreteItemEffect::OnHit(OnHit {
                 ttl: None,
                 name: AbilityName::NIGHTSTALKER,

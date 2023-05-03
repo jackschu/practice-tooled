@@ -61,7 +61,7 @@ fn example_vi_ult_combo(item_names: Vec<&str>) {
         let concrete_item_effects: Vec<ConcreteItemEffect> =
             load_wiki_item_effects(item_name.to_string())
                 .iter()
-                .map(|v| v.into())
+                .map(|v| (v, *item_name).into())
                 .collect();
         concrete_item_effects
             .into_iter()

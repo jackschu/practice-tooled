@@ -81,7 +81,7 @@ mod tests {
             let concrete_item_effects: Vec<ConcreteItemEffect> =
                 load_wiki_item_effects(item_name.to_string())
                     .iter()
-                    .map(|v| v.into())
+                    .map(|v| (v, item_name).into())
                     .collect();
             concrete_item_effects
                 .into_iter()
@@ -90,44 +90,146 @@ mod tests {
         }
 
         let target = &mut Champion::new_dummy();
-        Champion::execute_ability(
+        let first_proc = Champion::execute_ability(
             Rc::downgrade(&vi),
             &AbilityName::AUTO,
             target,
             &CastingData {
                 ..Default::default()
             },
-        );
-        let first_proc = target.get_missing_health();
+        )
+        .unwrap();
         TIME.with(|time| *time.borrow_mut() += 20.0);
-        Champion::execute_ability(
+        let second_proc = Champion::execute_ability(
             Rc::downgrade(&vi),
             &AbilityName::AUTO,
             target,
             &CastingData {
                 ..Default::default()
             },
-        );
-        let second_proc = target.get_missing_health() - first_proc;
+        )
+        .unwrap();
 
         //first and second duskblade procs do equal damage (due to delay)
         assert_relative_eq!(first_proc, second_proc);
 
         TIME.with(|time| *time.borrow_mut() += 5.0);
-        Champion::execute_ability(
+        let third_auto = Champion::execute_ability(
             Rc::downgrade(&vi),
             &AbilityName::AUTO,
             target,
             &CastingData {
                 ..Default::default()
             },
-        );
-        let third_auto = target.get_missing_health() - second_proc - first_proc;
+        )
+        .unwrap();
         assert!(
             third_auto < second_proc,
             "third auto {:2} shouldnt be a duskblade proc and do less than second {:2}",
             third_auto,
             second_proc
         );
+    }
+
+    #[rstest]
+    #[case(5.0, 0.0, (true, false))]
+    #[case(5.0, 2.0, (true, true))]
+    #[case(15.0, 0.0, (false, true))]
+    fn test_sheen(
+        #[case] ability_delay: f64,
+        #[case] auto_delay: f64,
+        #[case] expect_empowered: (bool, bool),
+    ) {
+        let level = 6;
+        let mut vi_data = Vi::new();
+        let vi_closures = vi_data.get_name_closures();
+        let vi = Rc::new(RefCell::new(Champion::new(
+            Vi::NAME.to_string(),
+            level,
+            [0, 0, 0, 0],
+            vi_closures,
+        )));
+
+        let item_names = ["Sheen"];
+        for item_name in item_names {
+            let item = load_wiki_item_stats(item_name.to_string());
+
+            let concrete_item_effects: Vec<ConcreteItemEffect> =
+                load_wiki_item_effects(item_name.to_string())
+                    .iter()
+                    .map(|v| (v, item_name).into())
+                    .collect();
+            concrete_item_effects
+                .into_iter()
+                .for_each(|v| v.apply_to_champ(&mut *vi.borrow_mut()));
+            item.modify_champion_stats(&mut vi.borrow_mut().stats);
+        }
+
+        let target = &mut Champion::new_dummy();
+        let base_auto = Champion::execute_ability(
+            Rc::downgrade(&vi),
+            &AbilityName::AUTO,
+            target,
+            &CastingData {
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        Champion::execute_ability(
+            Rc::downgrade(&vi),
+            &AbilityName::R,
+            target,
+            &CastingData {
+                ..Default::default()
+            },
+        );
+        TIME.with(|time| *time.borrow_mut() += ability_delay);
+
+        let empowered_auto = Champion::execute_ability(
+            Rc::downgrade(&vi),
+            &AbilityName::AUTO,
+            target,
+            &CastingData {
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        println!("{base_auto} {empowered_auto}");
+
+        TIME.with(|time| *time.borrow_mut() += auto_delay);
+        Champion::execute_ability(
+            Rc::downgrade(&vi),
+            &AbilityName::R,
+            target,
+            &CastingData {
+                ..Default::default()
+            },
+        );
+        let second_base_auto = Champion::execute_ability(
+            Rc::downgrade(&vi),
+            &AbilityName::AUTO,
+            target,
+            &CastingData {
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let (first, second) = expect_empowered;
+        if first {
+            assert!(base_auto < empowered_auto);
+        } else {
+            assert_relative_eq!(base_auto, empowered_auto);
+        }
+
+        if second {
+            assert!(
+                base_auto < second_base_auto,
+                "l {}, r {}",
+                base_auto,
+                second_base_auto
+            );
+        } else {
+            assert_relative_eq!(base_auto, second_base_auto);
+        }
     }
 }

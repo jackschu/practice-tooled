@@ -182,9 +182,8 @@ impl Champion {
         }
     }
 
-    fn process_on_hit_effects<'a>(
+    fn process_on_hit_effects(
         attacker_ref: Weak<RefCell<Self>>,
-        target: &mut Champion,
         on_hit_effects: Vec<EffectData>,
     ) -> Option<()> {
         let attacker = attacker_ref.upgrade()?;
@@ -193,6 +192,14 @@ impl Champion {
             attacker.borrow_mut().upsert_effect(effect);
         });
 
+        return Some(());
+    }
+
+    fn process_on_auto_effects(
+        attacker_ref: Weak<RefCell<Self>>,
+        target: &mut Champion,
+    ) -> Option<()> {
+        let attacker = attacker_ref.upgrade()?;
         let to_cast: Vec<AbilityEffect> = attacker
             .borrow_mut()
             .valid_effects_mut()
@@ -225,7 +232,8 @@ impl Champion {
         name: &AbilityName,
         target: &mut Champion,
         casting_data: &CastingData,
-    ) -> Option<()> {
+    ) -> Option<f64> {
+        let initial_health = target.current_health;
         let attacker = attacker_ref.upgrade()?;
         match name {
             AbilityName::AUTO => {
@@ -236,11 +244,18 @@ impl Champion {
                     .filter(|effect| matches!(effect.mode, OnHitActivation::Auto))
                     .map(|on_hit| (on_hit, Weak::clone(&attacker_ref)).into())
                     .collect();
-                Champion::process_on_hit_effects(
-                    Weak::clone(&attacker_ref),
-                    target,
-                    on_auto_effects,
-                );
+                Champion::process_on_hit_effects(Weak::clone(&attacker_ref), on_auto_effects);
+                Champion::process_on_auto_effects(attacker_ref, target);
+            }
+            AbilityName::Q | AbilityName::W | AbilityName::E | AbilityName::R => {
+                let on_auto_effects: Vec<EffectData> = attacker
+                    .borrow()
+                    .on_hit_item_effects
+                    .iter()
+                    .filter(|effect| matches!(effect.mode, OnHitActivation::ActiveSpell))
+                    .map(|on_hit| (on_hit, Weak::clone(&attacker_ref)).into())
+                    .collect();
+                Champion::process_on_hit_effects(Weak::clone(&attacker_ref), on_auto_effects);
             }
             _ => {}
         }
@@ -255,7 +270,8 @@ impl Champion {
                 func(target, Rc::clone(&attacker), casting_data);
             })
         }
-        return Some(());
+        let final_health = target.current_health;
+        return Some(initial_health - final_health);
     }
 
     pub fn get_base_armor(&self) -> f64 {
