@@ -39,10 +39,11 @@ thread_local! {
                 > = HashMap::new();
             let nightstalker = move
                 |target: &mut Champion, attacker: Rc<RefCell<Champion>>, _casting_data: &CastingData| {
-                    let is_ranged = false;
+                    let is_ranged = attacker.borrow().is_ranged();
                     let bonus_ad = attacker.borrow().get_bonus_ad();
-                    let bonus_scaling = if is_ranged {  0.30 } else {0.25};
-                    let flat_damage = if is_ranged {  75.0 } else {55.0};
+
+                    let bonus_scaling = if is_ranged { 0.30 } else { 0.25 };
+                    let flat_damage = if is_ranged { 75.0 } else { 55.0 };
                     target.receive_damage(&attacker.borrow(), flat_damage + bonus_ad * bonus_scaling);
             };
             let spellblade_sheen = move

@@ -110,6 +110,11 @@ impl Champion {
         };
     }
 
+    pub fn is_ranged(&self) -> bool {
+        // Source: https://leagueoflegends.fandom.com/wiki/List_of_champions/Basic_attacks
+        self.stats.attack_range >= 349.0
+    }
+
     fn add_effect(&mut self, effect: EffectData) {
         self.effects.push(effect)
     }
