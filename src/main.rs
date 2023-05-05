@@ -19,6 +19,7 @@ fn main() {
     load_wiki_item_stats("Long Sword".to_string());
     example_vi_ult_combo(Vec::from(["Duskblade of Draktharr"]));
     example_vi_ult_combo(Vec::from(["Spear of Shojin"]));
+    example_vi_ult_combo(Vec::from(["Essence Reaver"]));
     example_vi_ult_combo(Vec::from(["Umbral Glaive"]));
     example_vi_ult_combo(Vec::from(["Chempunk Chainsword"]));
     example_vi_ult_combo(Vec::from([

@@ -50,11 +50,19 @@ thread_local! {
                     let base_ad = attacker.borrow().get_base_ad();
                     target.receive_damage(&attacker.borrow(), base_ad);
             };
+            let spellblade_essence_reaver = move
+                |target: &mut Champion, attacker: Rc<RefCell<Champion>>, _casting_data: &CastingData| {
+                    let base_ad = attacker.borrow().get_base_ad();
+                    let bonus_ad = attacker.borrow().get_bonus_ad();
+                    target.receive_damage(&attacker.borrow(), base_ad + bonus_ad * 0.40);
+            };
             let auto_attack = get_auto_attack_ability();
             m.insert(AbilityName::NIGHTSTALKER,
                      Box::new(nightstalker));
             m.insert(AbilityName::SpellbladeSheen,
                      Box::new(spellblade_sheen));
+            m.insert(AbilityName::SpellbladeEssenceReaver,
+                     Box::new(spellblade_essence_reaver));
             m.insert(AbilityName::AUTO,
                      Box::new(auto_attack));
             return m;
@@ -165,6 +173,12 @@ impl From<(&UnknownItemEffect, &str)> for ConcreteItemEffect {
                 "Sheen" => ConcreteItemEffect::OnHit(OnHit {
                     ttl: Some(10.0),
                     name: AbilityName::SpellbladeSheen,
+                    mode: OnHitActivation::ActiveSpell,
+                    cooldown: 1.5,
+                }),
+                "Essence Reaver" => ConcreteItemEffect::OnHit(OnHit {
+                    ttl: Some(10.0),
+                    name: AbilityName::SpellbladeEssenceReaver,
                     mode: OnHitActivation::ActiveSpell,
                     cooldown: 1.5,
                 }),
