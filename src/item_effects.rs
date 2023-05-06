@@ -60,7 +60,7 @@ thread_local! {
             let spellblade_divine_sunderer = move
                 |target: &mut Champion, attacker: Rc<RefCell<Champion>>, _casting_data: &CastingData| {
                     let base_ad = attacker.borrow().get_base_ad();
-                    let target_max_health = target.borrow().get_max_health();
+                    let target_max_health = target.get_max_health();
                     let is_ranged = attacker.borrow().is_ranged();
                     let percent_health_damage = if is_ranged { 0.06 } else { 0.03 };
                     target.receive_damage(&attacker.borrow(), base_ad * 1.25 +  target_max_health * percent_health_damage);
