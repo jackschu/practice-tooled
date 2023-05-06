@@ -26,6 +26,7 @@ pub enum AbilityName {
     NIGHTSTALKER,
     SpellbladeSheen,
     SpellbladeEssenceReaver,
+    SpellbladeDivineSunderer,
 }
 impl fmt::Display for AbilityName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

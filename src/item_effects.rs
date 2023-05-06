@@ -57,6 +57,14 @@ thread_local! {
                     let bonus_ad = attacker.borrow().get_bonus_ad();
                     target.receive_damage(&attacker.borrow(), base_ad + bonus_ad * 0.40);
             };
+            let spellblade_divine_sunderer = move
+                |target: &mut Champion, attacker: Rc<RefCell<Champion>>, _casting_data: &CastingData| {
+                    let base_ad = attacker.borrow().get_base_ad();
+                    let target_max_health = target.borrow().get_max_health();
+                    let is_ranged = attacker.borrow().is_ranged();
+                    let percent_health_damage = if is_ranged { 0.06 } else { 0.03 };
+                    target.receive_damage(&attacker.borrow(), base_ad * 1.25 +  target_max_health * percent_health_damage);
+            };
             let auto_attack = get_auto_attack_ability();
             m.insert(AbilityName::NIGHTSTALKER,
                      Box::new(nightstalker));
@@ -64,6 +72,8 @@ thread_local! {
                      Box::new(spellblade_sheen));
             m.insert(AbilityName::SpellbladeEssenceReaver,
                      Box::new(spellblade_essence_reaver));
+            m.insert(AbilityName::SpellbladeDivineSunderer,
+                     Box::new(spellblade_divine_sunderer));
             m.insert(AbilityName::AUTO,
                      Box::new(auto_attack));
             return m;
@@ -180,6 +190,12 @@ impl From<(&UnknownItemEffect, &str)> for ConcreteItemEffect {
                 "Essence Reaver" => ConcreteItemEffect::OnHit(OnHit {
                     ttl: Some(10.0),
                     name: AbilityName::SpellbladeEssenceReaver,
+                    mode: OnHitActivation::ActiveSpell,
+                    cooldown: 1.5,
+                }),
+                "Divine Sunderer" => ConcreteItemEffect::OnHit(OnHit {
+                    ttl: Some(10.0),
+                    name: AbilityName::SpellbladeDivineSunderer,
                     mode: OnHitActivation::ActiveSpell,
                     cooldown: 1.5,
                 }),
