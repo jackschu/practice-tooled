@@ -249,12 +249,7 @@ impl Vi {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        item_effects::{ChampionApplyable, ConcreteItemEffect},
-        load_champion::ChampionStatModifier,
-        load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats},
-        time_manager::TIME,
-    };
+    use crate::{load_wiki_item::apply_item_to_champ, time_manager::TIME};
 
     use super::*;
     use rstest::rstest;
@@ -312,18 +307,8 @@ mod tests {
         let mut vi = Champion::new(Vi::NAME.to_string(), level, [0, 0, 2, 0], vi_closures);
 
         let item_names = ["Serrated Dirk", "Last Whisper"];
-        for item_name in item_names {
-            let item = load_wiki_item_stats(item_name.to_string());
-
-            let concrete_item_effects: Vec<ConcreteItemEffect> =
-                load_wiki_item_effects(item_name.to_string())
-                    .iter()
-                    .map(|v| (v, item_name).into())
-                    .collect();
-            concrete_item_effects
-                .into_iter()
-                .for_each(|v| v.apply_to_champ(&mut vi));
-            item.modify_champion_stats(&mut vi.stats);
+        for item_name in &item_names {
+            apply_item_to_champ(item_name, &mut vi);
         }
 
         let target = &mut Champion::new_dummy_with_resist(30.0, 0.0);

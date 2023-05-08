@@ -7,10 +7,9 @@ use practice_tooled::{
         leblanc::Leblanc,
         Vi,
     },
-    item_effects::{ChampionApplyable, ConcreteItemEffect},
     load_champion::{load_champion_names, load_champion_stats, ChampionStatModifier},
     load_dd_item::load_dd_item,
-    load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats, open_wiki_item_json},
+    load_wiki_item::{apply_item_to_champ, load_wiki_item_stats, open_wiki_item_json},
     target::VitalityData,
 };
 
@@ -57,17 +56,7 @@ fn example_vi_ult_combo(item_names: Vec<&str>) {
     )));
 
     for item_name in &item_names {
-        let item = load_wiki_item_stats(item_name.to_string());
-
-        let concrete_item_effects: Vec<ConcreteItemEffect> =
-            load_wiki_item_effects(item_name.to_string())
-                .iter()
-                .map(|v| (v, *item_name).into())
-                .collect();
-        concrete_item_effects
-            .into_iter()
-            .for_each(|v| v.apply_to_champ(&mut *vi.borrow_mut()));
-        item.modify_champion_stats(&mut vi.borrow_mut().stats);
+        apply_item_to_champ(item_name, &mut vi.borrow_mut());
     }
 
     let ranks = vi.borrow().ranks.clone();

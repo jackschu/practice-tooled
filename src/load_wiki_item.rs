@@ -5,8 +5,9 @@ use serde_json::Value;
 use std::{collections::HashMap, fs::File, io::Read};
 
 use crate::{
+    champions::champion::Champion,
     core::stack_multiplicative_reduction,
-    item_effects::UnknownItemEffect,
+    item_effects::{ChampionApplyable, ConcreteItemEffect, UnknownItemEffect},
     load_champion::{ChampionStatModifier, ChampionStats},
 };
 
@@ -130,6 +131,20 @@ pub fn load_wiki_item_effects(name: String) -> Vec<UnknownItemEffect> {
         .into_iter()
         .map(|(_, value)| serde_json::from_value(value).unwrap())
         .collect();
+}
+
+pub fn apply_item_to_champ(item_name: &str, champion: &mut Champion) {
+    let item = load_wiki_item_stats(item_name.to_string());
+
+    let concrete_item_effects: Vec<ConcreteItemEffect> =
+        load_wiki_item_effects(item_name.to_string())
+            .iter()
+            .map(|v| (v, item_name).into())
+            .collect();
+    concrete_item_effects
+        .into_iter()
+        .for_each(|v| v.apply_to_champ(champion));
+    item.modify_champion_stats(&mut champion.stats);
 }
 
 #[cfg(test)]

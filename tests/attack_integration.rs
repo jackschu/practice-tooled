@@ -13,9 +13,7 @@ mod tests {
             champion::{AbilityName, CastingData, Champion},
             Vi,
         },
-        item_effects::{ChampionApplyable, ConcreteItemEffect},
-        load_champion::ChampionStatModifier,
-        load_wiki_item::{load_wiki_item_effects, load_wiki_item_stats},
+        load_wiki_item::apply_item_to_champ,
         target::VitalityData,
         time_manager::TIME,
     };
@@ -74,20 +72,7 @@ mod tests {
             vi_closures,
         )));
 
-        let item_names = ["Duskblade of Draktharr"];
-        for item_name in item_names {
-            let item = load_wiki_item_stats(item_name.to_string());
-
-            let concrete_item_effects: Vec<ConcreteItemEffect> =
-                load_wiki_item_effects(item_name.to_string())
-                    .iter()
-                    .map(|v| (v, item_name).into())
-                    .collect();
-            concrete_item_effects
-                .into_iter()
-                .for_each(|v| v.apply_to_champ(&mut *vi.borrow_mut()));
-            item.modify_champion_stats(&mut vi.borrow_mut().stats);
-        }
+        apply_item_to_champ("Duskblade of Draktharr", &mut vi.borrow_mut());
 
         let target = &mut Champion::new_dummy();
         let first_proc = Champion::execute_ability(
@@ -150,20 +135,7 @@ mod tests {
             vi_closures,
         )));
 
-        let item_names = ["Sheen"];
-        for item_name in item_names {
-            let item = load_wiki_item_stats(item_name.to_string());
-
-            let concrete_item_effects: Vec<ConcreteItemEffect> =
-                load_wiki_item_effects(item_name.to_string())
-                    .iter()
-                    .map(|v| (v, item_name).into())
-                    .collect();
-            concrete_item_effects
-                .into_iter()
-                .for_each(|v| v.apply_to_champ(&mut *vi.borrow_mut()));
-            item.modify_champion_stats(&mut vi.borrow_mut().stats);
-        }
+        apply_item_to_champ("Sheen", &mut vi.borrow_mut());
 
         let target = &mut Champion::new_dummy();
         let base_auto = Champion::execute_ability(
